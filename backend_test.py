@@ -99,17 +99,31 @@ def test_token_endpoint():
             "username": TEST_USER_EMAIL,  # OAuth2 uses username field
             "password": TEST_USER_PASSWORD
         }
-        response = requests.post(f"{API_URL}/token", data=payload)
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        response = requests.post(f"{API_URL}/token", data=payload, headers=headers)
         print(f"Status code: {response.status_code}")
-        print(f"Response: {response.json()}")
         
-        if response.status_code == 200 and "access_token" in response.json():
-            auth_token = response.json()["access_token"]
-            test_results["token_endpoint"] = True
-            print("✅ Token endpoint test passed")
-            return True
+        if response.status_code == 200:
+            response_data = response.json()
+            print(f"Response: {response_data}")
+            
+            if "access_token" in response_data:
+                auth_token = response_data["access_token"]
+                test_results["token_endpoint"] = True
+                print("✅ Token endpoint test passed")
+                return True
+            else:
+                print("❌ Token endpoint test failed - No access token in response")
+                return False
         else:
-            print("❌ Token endpoint test failed")
+            print(f"❌ Token endpoint test failed with status code {response.status_code}")
+            if response.text:
+                try:
+                    print(f"Error response: {response.json()}")
+                except:
+                    print(f"Error response text: {response.text}")
             return False
     except Exception as e:
         print(f"❌ Error testing token endpoint: {str(e)}")

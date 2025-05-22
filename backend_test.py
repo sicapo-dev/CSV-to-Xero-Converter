@@ -274,17 +274,20 @@ def run_all_tests():
     try:
         import pymongo
         client = pymongo.MongoClient('mongodb://localhost:27017')
-        db = client['test_database']
-        user = db.users.find_one({"email": TEST_USER_EMAIL})
-        if user:
-            print(f"User found in database: {user['email']}")
-            print(f"User fields: {list(user.keys())}")
-            if 'hashed_password' in user:
-                print("✅ User has hashed_password field")
-            else:
-                print("❌ User missing hashed_password field")
+        # Try both database names
+        for db_name in ['test_database', 'xero_converter']:
+            db = client[db_name]
+            user = db.users.find_one({"email": TEST_USER_EMAIL})
+            if user:
+                print(f"User found in database '{db_name}': {user['email']}")
+                print(f"User fields: {list(user.keys())}")
+                if 'hashed_password' in user:
+                    print("✅ User has hashed_password field")
+                else:
+                    print("❌ User missing hashed_password field")
+                break
         else:
-            print("❌ User not found in database")
+            print("❌ User not found in any database")
     except Exception as e:
         print(f"❌ Error checking database: {str(e)}")
     

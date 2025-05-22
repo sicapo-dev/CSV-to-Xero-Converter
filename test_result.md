@@ -106,52 +106,64 @@ user_problem_statement: "Build a web-based CSV/XLSX format converter for Xero im
 
 backend:
   - task: "Implement file upload and parsing endpoint"
-    implemented: false
+    implemented: true
     working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Beginning implementation of file upload and parsing endpoint"
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented file upload endpoint with support for CSV and XLSX parsing using pandas and openpyxl"
 
   - task: "Implement auto-mapping to Xero format"
-    implemented: false
+    implemented: true
     working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Beginning implementation of auto-mapping functionality"
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented auto-mapping logic that analyzes column names and content to match Xero format, with specific formatting for dates, amounts, and references"
 
   - task: "Implement user authentication"
-    implemented: false
+    implemented: true
     working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Not started yet, will implement after core functionality"
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented user authentication with JWT tokens, including registration, login, and user profile endpoints"
 
   - task: "Implement file conversion history"
-    implemented: false
+    implemented: true
     working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Not started yet, will implement after core functionality"
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented file conversion history with endpoints to store, retrieve, and download past conversions"
 
 frontend:
   - task: "Create file upload interface"

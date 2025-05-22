@@ -107,11 +107,11 @@ user_problem_statement: "Build a web-based CSV/XLSX format converter for Xero im
 backend:
   - task: "Implement file upload and parsing endpoint"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
@@ -119,14 +119,17 @@ backend:
       - working: "NA"
         agent: "main"
         comment: "Implemented file upload endpoint with support for CSV and XLSX parsing using pandas and openpyxl"
+      - working: false
+        agent: "testing"
+        comment: "Unable to test file upload endpoint due to authentication issues. The token endpoint is failing with a 500 Internal Server Error due to a validation error in the UserInDB model."
 
   - task: "Implement auto-mapping to Xero format"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
@@ -134,14 +137,17 @@ backend:
       - working: "NA"
         agent: "main"
         comment: "Implemented auto-mapping logic that analyzes column names and content to match Xero format, with specific formatting for dates, amounts, and references"
+      - working: false
+        agent: "testing"
+        comment: "Unable to test auto-mapping functionality due to authentication issues. The token endpoint is failing with a 500 Internal Server Error."
 
   - task: "Implement user authentication"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
@@ -149,14 +155,17 @@ backend:
       - working: "NA"
         agent: "main"
         comment: "Implemented user authentication with JWT tokens, including registration, login, and user profile endpoints"
+      - working: false
+        agent: "testing"
+        comment: "User registration endpoint works correctly, but token endpoint fails with a 500 Internal Server Error. Analysis of server logs shows a validation error in the UserInDB model: it inherits from User which has a required 'password' field, but when retrieving a user from the database, only 'hashed_password' is available."
 
   - task: "Implement file conversion history"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
@@ -164,6 +173,9 @@ backend:
       - working: "NA"
         agent: "main"
         comment: "Implemented file conversion history with endpoints to store, retrieve, and download past conversions"
+      - working: false
+        agent: "testing"
+        comment: "Unable to test file conversion history due to authentication issues. The token endpoint is failing with a 500 Internal Server Error."
 
 frontend:
   - task: "Create file upload interface"

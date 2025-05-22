@@ -269,9 +269,35 @@ def run_all_tests():
         print("❌ Cannot continue testing without successful registration")
         return
     
+    # Check the database to see if the user was created correctly
+    print("\n--- Checking database for user ---")
+    try:
+        import pymongo
+        client = pymongo.MongoClient('mongodb://localhost:27017')
+        db = client['test_database']
+        user = db.users.find_one({"email": TEST_USER_EMAIL})
+        if user:
+            print(f"User found in database: {user['email']}")
+            print(f"User fields: {list(user.keys())}")
+            if 'hashed_password' in user:
+                print("✅ User has hashed_password field")
+            else:
+                print("❌ User missing hashed_password field")
+        else:
+            print("❌ User not found in database")
+    except Exception as e:
+        print(f"❌ Error checking database: {str(e)}")
+    
     # Test token generation
     if not test_token_endpoint():
         print("❌ Cannot continue testing without authentication token")
+        print("Skipping remaining tests that require authentication")
+        
+        # Print summary of what we've tested so far
+        print("\n=== Test Summary ===")
+        for endpoint, result in test_results.items():
+            status = "✅ PASSED" if result else "❌ FAILED"
+            print(f"{endpoint}: {status}")
         return
     
     # Test user profile

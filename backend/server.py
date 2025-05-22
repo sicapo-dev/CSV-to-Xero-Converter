@@ -104,7 +104,12 @@ def get_password_hash(password):
 def get_user(email):
     user_data = db.users.find_one({"email": email})
     if user_data:
-        return UserInDB(**user_data)
+        # Convert MongoDB document to dict and add empty password field
+        user_dict = dict(user_data)
+        # Ensure ObjectId is converted to string
+        if '_id' in user_dict:
+            user_dict['_id'] = str(user_dict['_id'])
+        return UserInDB(**user_dict)
     return None
 
 def authenticate_user(email, password):

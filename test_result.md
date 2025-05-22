@@ -244,7 +244,7 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 0
+  test_sequence: 1
   run_ui: false
 
 test_plan:
@@ -255,9 +255,11 @@ test_plan:
     - "Implement split-screen preview"
     - "Implement column remapping UI"
   stuck_tasks: []
-  test_all: false
+  test_all: true
   test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
     message: "Setting up initial test plan to focus on core functionality first. Will implement file upload, parsing, and auto-mapping to Xero format, along with the UI components needed to interact with these features."
+  - agent: "main"
+    message: "Completed initial implementation of all backend and frontend components. Ready for testing to verify functionality. Focus on testing file upload, parsing, and auto-mapping features first, then authentication and history features."

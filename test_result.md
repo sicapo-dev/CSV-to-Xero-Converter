@@ -280,8 +280,7 @@ test_plan:
     - "Implement file upload and parsing endpoint"
     - "Implement auto-mapping to Xero format"
     - "Implement file conversion history"
-  stuck_tasks:
-    - "Implement user authentication"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 

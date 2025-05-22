@@ -290,12 +290,7 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus:
-    - "Create file upload interface"
-    - "Implement split-screen preview"
-    - "Implement column remapping UI"
-    - "Create authentication UI"
-    - "Create conversion history dashboard"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"

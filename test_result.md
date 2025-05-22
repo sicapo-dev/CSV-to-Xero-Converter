@@ -143,11 +143,11 @@ backend:
 
   - task: "Implement user authentication"
     implemented: true
-    working: false
+    working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 1
-    priority: "medium"
-    needs_retesting: false
+    priority: "high"
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
@@ -158,6 +158,9 @@ backend:
       - working: false
         agent: "testing"
         comment: "User registration endpoint works correctly, but token endpoint fails with a 500 Internal Server Error. Analysis of server logs shows a validation error in the UserInDB model: it inherits from User which has a required 'password' field, but when retrieving a user from the database, only 'hashed_password' is available."
+      - working: "NA"
+        agent: "main"
+        comment: "Fixed the UserInDB model validation error by making the password field optional. Also updated the get_user function to handle MongoDB document conversion properly."
 
   - task: "Implement file conversion history"
     implemented: true

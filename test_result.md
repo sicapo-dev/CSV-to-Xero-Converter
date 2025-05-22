@@ -261,13 +261,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Implement file upload and parsing endpoint"
-    - "Implement auto-mapping to Xero format"
-    - "Create file upload interface"
-    - "Implement split-screen preview"
-    - "Implement column remapping UI"
-  stuck_tasks: []
-  test_all: true
+    - "Implement user authentication"
+  stuck_tasks:
+    - "Implement user authentication"
+  test_all: false
   test_priority: "high_first"
 
 agent_communication:
@@ -275,3 +272,5 @@ agent_communication:
     message: "Setting up initial test plan to focus on core functionality first. Will implement file upload, parsing, and auto-mapping to Xero format, along with the UI components needed to interact with these features."
   - agent: "main"
     message: "Completed initial implementation of all backend and frontend components. Ready for testing to verify functionality. Focus on testing file upload, parsing, and auto-mapping features first, then authentication and history features."
+  - agent: "testing"
+    message: "Tested the backend API endpoints. Found a critical issue with the user authentication system. The /api/status and /api/register endpoints work correctly, but the /api/token endpoint fails with a 500 Internal Server Error. Analysis of server logs shows a validation error in the UserInDB model: it inherits from User which has a required 'password' field, but when retrieving a user from the database, only 'hashed_password' is available. This prevents all authenticated endpoints from working. Recommend fixing the UserInDB model by either: 1) Making the password field optional in the User model, 2) Not inheriting from User in UserInDB, or 3) Creating a separate function to convert database data to UserInDB."

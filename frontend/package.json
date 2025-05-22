@@ -11,7 +11,7 @@
     "react-scripts": "5.0.1",
     "firebase": "^10.6.0",
     "react-dropzone": "^14.2.3",
-    "react-table": "^8.0.0",
+    "@tanstack/react-table": "^8.11.0",
     "react-toastify": "^10.0.0",
     "xlsx": "^0.19.3"
   },

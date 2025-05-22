@@ -101,3 +101,136 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Build a web-based CSV/XLSX format converter for Xero import using Emergent.sh. The tool should allow users to upload files, automatically map columns to Xero format, provide a preview interface, and support user accounts."
+
+backend:
+  - task: "Implement file upload and parsing endpoint"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Beginning implementation of file upload and parsing endpoint"
+
+  - task: "Implement auto-mapping to Xero format"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Beginning implementation of auto-mapping functionality"
+
+  - task: "Implement user authentication"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Not started yet, will implement after core functionality"
+
+  - task: "Implement file conversion history"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Not started yet, will implement after core functionality"
+
+frontend:
+  - task: "Create file upload interface"
+    implemented: false
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Beginning implementation of file upload interface"
+
+  - task: "Implement split-screen preview"
+    implemented: false
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Beginning implementation of split-screen preview"
+
+  - task: "Implement column remapping UI"
+    implemented: false
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Beginning implementation of column remapping UI"
+
+  - task: "Create authentication UI"
+    implemented: false
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Not started yet, will implement after core functionality"
+
+  - task: "Create conversion history dashboard"
+    implemented: false
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Not started yet, will implement after core functionality"
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Implement file upload and parsing endpoint"
+    - "Implement auto-mapping to Xero format"
+    - "Create file upload interface"
+    - "Implement split-screen preview"
+    - "Implement column remapping UI"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Setting up initial test plan to focus on core functionality first. Will implement file upload, parsing, and auto-mapping to Xero format, along with the UI components needed to interact with these features."

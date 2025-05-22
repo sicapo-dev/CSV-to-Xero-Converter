@@ -47,7 +47,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/token")
 class User(BaseModel):
     id: Optional[str] = None
     email: EmailStr
-    password: str
+    password: Optional[str] = None
     created_at: Optional[datetime] = None
     
     class Config:

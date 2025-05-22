@@ -1,0 +1,6 @@
+Transaction Date,Reference,Description,Amount,Type
+2023-01-15,INV001,Office Supplies,-125.50,Expense
+2023-01-20,PAY002,Client Payment,1500.00,Income
+2023-01-25,INV003,Software Subscription,-49.99,Expense
+2023-02-01,PAY004,Client Retainer,2000.00,Income
+2023-02-10,INV005,Marketing Services,-350.00,Expense

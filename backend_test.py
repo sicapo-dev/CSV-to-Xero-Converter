@@ -89,17 +89,181 @@ def test_register_endpoint():
         print(f"❌ Error testing register endpoint: {str(e)}")
         return False
 
-def run_all_tests():
-    """Run all tests in sequence"""
-    print("\n=== Starting Backend API Tests ===\n")
+def test_token_endpoint():
+    """Test the token endpoint"""
+    global auth_token
+    print("\n--- Testing /api/token endpoint ---")
+    try:
+        data = {
+            "username": TEST_USER_EMAIL,
+            "password": TEST_USER_PASSWORD
+        }
+        response = requests.post(f"{API_URL}/token", data=data)
+        print(f"Status code: {response.status_code}")
+        print(f"Response: {response.json()}")
+        
+        if response.status_code == 200 and "access_token" in response.json():
+            auth_token = response.json()["access_token"]
+            test_results["token_endpoint"] = True
+            print("✅ Token endpoint test passed")
+            print(f"Received token: {auth_token[:10]}...")
+            return True
+        else:
+            print("❌ Token endpoint test failed")
+            return False
+    except Exception as e:
+        print(f"❌ Error testing token endpoint: {str(e)}")
+        return False
+
+def test_me_endpoint():
+    """Test the me endpoint"""
+    print("\n--- Testing /api/me endpoint ---")
+    if not auth_token:
+        print("❌ Cannot test /api/me without auth token")
+        return False
     
-    # Test status endpoint
-    test_status_endpoint()
+    try:
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        response = requests.get(f"{API_URL}/me", headers=headers)
+        print(f"Status code: {response.status_code}")
+        print(f"Response: {response.json()}")
+        
+        if response.status_code == 200 and "email" in response.json():
+            test_results["me_endpoint"] = True
+            print("✅ Me endpoint test passed")
+            return True
+        else:
+            print("❌ Me endpoint test failed")
+            return False
+    except Exception as e:
+        print(f"❌ Error testing me endpoint: {str(e)}")
+        return False
+
+def test_upload_endpoint():
+    """Test the upload endpoint"""
+    global file_id
+    print("\n--- Testing /api/upload endpoint ---")
+    if not auth_token:
+        print("❌ Cannot test /api/upload without auth token")
+        return False
     
-    # Test user registration
-    test_register_endpoint()
+    try:
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        csv_data = create_test_csv()
+        files = {
+            'file': ('test_file.csv', csv_data, 'text/csv')
+        }
+        
+        response = requests.post(f"{API_URL}/upload", headers=headers, files=files)
+        print(f"Status code: {response.status_code}")
+        print(f"Response keys: {list(response.json().keys())}")
+        
+        if response.status_code == 200 and "file_id" in response.json():
+            file_id = response.json()["file_id"]
+            test_results["upload_endpoint"] = True
+            print("✅ Upload endpoint test passed")
+            print(f"Received file_id: {file_id}")
+            return True
+        else:
+            print("❌ Upload endpoint test failed")
+            return False
+    except Exception as e:
+        print(f"❌ Error testing upload endpoint: {str(e)}")
+        return False
+
+def test_convert_endpoint():
+    """Test the convert endpoint"""
+    global conversion_id
+    print("\n--- Testing /api/convert endpoint ---")
+    if not auth_token or not file_id:
+        print("❌ Cannot test /api/convert without auth token and file_id")
+        return False
     
-    # Check the database to see if the user was created correctly
+    try:
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        # Create a simple column mapping
+        column_mapping = {
+            "A": "TransactionDate",
+            "B": "Reference",
+            "C": "Description",
+            "D": "Amount",
+            "E": "Amount"  # Reference will be derived from amount
+        }
+        
+        data = {
+            'file_id': file_id,
+            'column_mappings': json.dumps(column_mapping),
+            'formatted_filename': f"test_formatted_{uuid.uuid4()}.csv"
+        }
+        
+        response = requests.post(f"{API_URL}/convert", headers=headers, data=data)
+        print(f"Status code: {response.status_code}")
+        print(f"Response keys: {list(response.json().keys()) if response.status_code == 200 else 'Error'}")
+        
+        if response.status_code == 200 and "conversion_id" in response.json():
+            conversion_id = response.json()["conversion_id"]
+            test_results["convert_endpoint"] = True
+            print("✅ Convert endpoint test passed")
+            print(f"Received conversion_id: {conversion_id}")
+            return True
+        else:
+            print("❌ Convert endpoint test failed")
+            return False
+    except Exception as e:
+        print(f"❌ Error testing convert endpoint: {str(e)}")
+        return False
+
+def test_conversions_endpoint():
+    """Test the conversions endpoint"""
+    print("\n--- Testing /api/conversions endpoint ---")
+    if not auth_token:
+        print("❌ Cannot test /api/conversions without auth token")
+        return False
+    
+    try:
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        response = requests.get(f"{API_URL}/conversions", headers=headers)
+        print(f"Status code: {response.status_code}")
+        print(f"Response type: {type(response.json())}")
+        print(f"Number of conversions: {len(response.json()) if isinstance(response.json(), list) else 'Not a list'}")
+        
+        if response.status_code == 200 and isinstance(response.json(), list):
+            test_results["conversions_endpoint"] = True
+            print("✅ Conversions endpoint test passed")
+            return True
+        else:
+            print("❌ Conversions endpoint test failed")
+            return False
+    except Exception as e:
+        print(f"❌ Error testing conversions endpoint: {str(e)}")
+        return False
+
+def test_download_endpoint():
+    """Test the download endpoint"""
+    print("\n--- Testing /api/download endpoint ---")
+    if not auth_token or not conversion_id:
+        print("❌ Cannot test /api/download without auth token and conversion_id")
+        return False
+    
+    try:
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        response = requests.get(f"{API_URL}/download/{conversion_id}", headers=headers)
+        print(f"Status code: {response.status_code}")
+        print(f"Response: {response.json()}")
+        
+        if response.status_code == 200 and "file_path" in response.json():
+            test_results["download_endpoint"] = True
+            print("✅ Download endpoint test passed")
+            return True
+        else:
+            print("❌ Download endpoint test failed")
+            return False
+    except Exception as e:
+        print(f"❌ Error testing download endpoint: {str(e)}")
+        return False
+
+def check_database():
+    """Check the database to see if the user was created correctly"""
     print("\n--- Checking database for user ---")
     try:
         import pymongo
@@ -120,23 +284,47 @@ def run_all_tests():
             print("❌ User not found in any database")
     except Exception as e:
         print(f"❌ Error checking database: {str(e)}")
+
+def run_all_tests():
+    """Run all tests in sequence"""
+    print("\n=== Starting Backend API Tests ===\n")
+    
+    # Test status endpoint
+    test_status_endpoint()
+    
+    # Test user registration
+    test_register_endpoint()
+    
+    # Test token endpoint (login)
+    test_token_endpoint()
+    
+    # If we have a token, test authenticated endpoints
+    if auth_token:
+        # Test me endpoint
+        test_me_endpoint()
+        
+        # Test file upload
+        test_upload_endpoint()
+        
+        # If file upload worked, test conversion
+        if file_id:
+            test_convert_endpoint()
+            
+            # Test conversions list
+            test_conversions_endpoint()
+            
+            # If conversion worked, test download
+            if conversion_id:
+                test_download_endpoint()
+    
+    # Check database
+    check_database()
     
     # Print summary
     print("\n=== Test Summary ===")
     for endpoint, result in test_results.items():
         status = "✅ PASSED" if result else "❌ FAILED"
         print(f"{endpoint}: {status}")
-    
-    print("\n=== Authentication Issue Analysis ===")
-    print("The token endpoint is failing with a 500 Internal Server Error.")
-    print("Analysis of server logs shows a validation error in the UserInDB model:")
-    print("- The UserInDB model inherits from User which has a required 'password' field")
-    print("- When retrieving a user from the database, only 'hashed_password' is available")
-    print("- This causes a validation error because 'password' is required but missing")
-    print("\nRecommended fix:")
-    print("1. Modify the UserInDB model to not inherit from User")
-    print("2. Or make the password field optional in the User model")
-    print("3. Or create a separate function to convert database data to UserInDB")
 
 if __name__ == "__main__":
     run_all_tests()

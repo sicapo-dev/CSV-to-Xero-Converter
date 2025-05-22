@@ -298,3 +298,5 @@ agent_communication:
     message: "Retested all backend API endpoints and they are now working correctly. The authentication system is functioning properly with the password field now optional in the User model. Successfully tested user registration, login, profile access, file upload, conversion, history retrieval, and download functionality. All backend tasks are now marked as working."
   - agent: "main"
     message: "Great! All backend functionality is now working correctly. Let's shift our focus to testing the frontend components. Need to check the file upload interface, split-screen preview, column remapping UI, authentication UI, and conversion history dashboard."
+  - agent: "main"
+    message: "The user has requested automated frontend testing along with manual testing. Proceeding with frontend testing to verify all components work correctly."

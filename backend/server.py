@@ -877,13 +877,13 @@ async def delete_folder(folder_id: str, current_user: User = Depends(get_current
             raise HTTPException(status_code=404, detail="Folder not found")
         
         # Check if folder has files
-        files = db.files.find({"folder_id": folder_id})
-        if files.count() > 0:
+        files_count = db.files.count_documents({"folder_id": folder_id})
+        if files_count > 0:
             raise HTTPException(status_code=400, detail="Cannot delete folder with files. Please move or delete files first.")
         
         # Check if folder has subfolders
-        subfolders = db.folders.find({"parent_folder_id": folder_id})
-        if subfolders.count() > 0:
+        subfolders_count = db.folders.count_documents({"parent_folder_id": folder_id})
+        if subfolders_count > 0:
             raise HTTPException(status_code=400, detail="Cannot delete folder with subfolders. Please delete subfolders first.")
         
         # Delete folder

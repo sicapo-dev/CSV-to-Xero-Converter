@@ -498,10 +498,23 @@ async def download_conversion(conversion_id: str, current_user: User = Depends(g
         if not conversion:
             raise HTTPException(status_code=404, detail="Conversion not found")
         
-        # Return the formatted data path
-        return {"file_path": f"/tmp/{conversion['formatted_filename']}"}
+        # Get file path
+        file_path = f"/tmp/{conversion['formatted_filename']}"
+        
+        # Check if file exists
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Return file content as a response
+        from fastapi.responses import FileResponse
+        return FileResponse(
+            path=file_path, 
+            filename=conversion['formatted_filename'],
+            media_type="text/csv"
+        )
     
     except Exception as e:
+        print(f"Error in download_conversion: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Status endpoint

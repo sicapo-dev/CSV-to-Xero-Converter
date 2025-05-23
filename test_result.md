@@ -242,6 +242,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "Preview functionality is working correctly. The /api/preview endpoint properly updates when column mappings change, allowing users to see how their mapping changes affect the formatted data without completing the full conversion."
+      - working: true
+        agent: "testing"
+        comment: "✅ COMPREHENSIVE PREVIEW TESTING COMPLETED: Verified specific Column D (Amount) and Column E (Reference) requirements as requested in review. RESULTS: 1) Column structure matches Xero format exactly: Column A=Date, Column B=Cheque No., Column C=Description, Column D=Amount (with proper +/- signs), Column E=Reference (D/C indicators). 2) Amount formatting working correctly: Credits (C/CR/Credit) show negative amounts (-500.0, -75.0, etc.) and 'C' in Reference column, Debits (D/DB/Debit) show positive amounts (150.0, 1200.0, etc.) and 'D' in Reference column. 3) Tested with comprehensive CSV containing various reference formats (Debit, Credit, D, C, DB, CR) - all correctly processed. 4) Preview endpoint successfully handles Reference column mapping via transaction_type parameter. The preview functionality is working exactly as requested for Column D and E requirements."
 
 frontend:
   - task: "Create file upload interface"

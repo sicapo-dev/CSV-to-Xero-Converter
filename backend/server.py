@@ -407,8 +407,18 @@ def apply_xero_format(df, column_mapping):
     
     # Format Amount (Column D)
     if 'D' in column_mapping and column_mapping['D']:
-        # Pass whether we have a transaction type column to format_amount
-        xero_df['Amount'] = df[column_mapping['D']].apply(lambda x: format_amount(x, has_transaction_type))
+        # If we have a transaction type column, use it for reference-based formatting
+        if has_transaction_type:
+            xero_df['Amount'] = df.apply(
+                lambda row: format_amount(
+                    row[column_mapping['D']], 
+                    row[column_mapping['transaction_type']] if pd.notna(row[column_mapping['transaction_type']]) else None
+                ), 
+                axis=1
+            )
+        else:
+            # No reference column, use default formatting
+            xero_df['Amount'] = df[column_mapping['D']].apply(lambda x: format_amount(x, None))
     else:
         xero_df['Amount'] = ""
     

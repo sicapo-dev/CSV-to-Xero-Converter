@@ -88,7 +88,7 @@ class Folder(BaseModel):
             datetime: lambda v: v.isoformat()
         }
 
-class File(BaseModel):
+class FileRecord(BaseModel):
     id: Optional[str] = None
     user_id: str
     folder_id: Optional[str] = None

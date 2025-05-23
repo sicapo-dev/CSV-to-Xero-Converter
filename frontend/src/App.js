@@ -767,6 +767,11 @@ function Dashboard() {
 // File Conversion Page
 function FileConversion() {
   const navigate = useNavigate();
+  const location = window.location.search ? window.location.search : null;
+  const params = new URLSearchParams(location);
+  const fileIdFromUrl = params.get('fileId');
+  const folderIdFromUrl = params.get('folderId');
+  
   const [fileData, setFileData] = useState(null);
   const [originalFilename, setOriginalFilename] = useState('');
   const [columnMapping, setColumnMapping] = useState({});
@@ -774,8 +779,41 @@ function FileConversion() {
   const [formattedFilename, setFormattedFilename] = useState('');
   const [isConverting, setIsConverting] = useState(false);
   const [isUpdatingPreview, setIsUpdatingPreview] = useState(false);
+  const [fileId, setFileId] = useState(fileIdFromUrl || null);
+  const [folderId, setFolderId] = useState(folderIdFromUrl || 'root');
+  const [isLoading, setIsLoading] = useState(!!fileIdFromUrl);
+
+  useEffect(() => {
+    if (fileId) {
+      fetchFileData(fileId);
+    }
+  }, [fileId]);
+
+  const fetchFileData = async (id) => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${BACKEND_URL}/api/files/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data && response.data.original_data) {
+        setFileData(response.data);
+        setOriginalFilename(response.data.original_filename);
+        setColumnMapping(response.data.column_mapping || {});
+        setFormattedData(response.data.formatted_data || []);
+        setFormattedFilename(response.data.original_filename.replace(/\.[^/.]+$/, '') + '_formatted.csv');
+      }
+    } catch (error) {
+      toast.error('Failed to fetch file data: ' + (error.response?.data?.detail || 'Unknown error'));
+      console.error('Error fetching file data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleFileProcessed = (data, filename) => {
+    setFileId(data.file_id);
     setFileData(data);
     setOriginalFilename(filename);
     setColumnMapping(data.column_mapping);
@@ -791,7 +829,7 @@ function FileConversion() {
     try {
       const token = localStorage.getItem('token');
       const formData = new FormData();
-      formData.append('file_id', fileData.file_id);
+      formData.append('file_id', fileId);
       formData.append('column_mappings', JSON.stringify(columnMapping));
       formData.append('preview_only', 'true');
       
@@ -820,7 +858,7 @@ function FileConversion() {
     try {
       const token = localStorage.getItem('token');
       const formData = new FormData();
-      formData.append('file_id', fileData.file_id);
+      formData.append('file_id', fileId);
       formData.append('column_mappings', JSON.stringify(columnMapping));
       formData.append('formatted_filename', formattedFilename);
       
@@ -896,7 +934,11 @@ function FileConversion() {
             <div className="px-4 py-5 sm:p-6">
               <h2 className="text-lg font-medium text-gray-900 mb-4">Convert File to Xero Format</h2>
               
-              {!fileData ? (
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="loader"></div>
+                </div>
+              ) : !fileData ? (
                 <div>
                   <div className="bg-blue-50 p-4 rounded-lg mb-6">
                     <h3 className="text-md font-medium text-blue-800 mb-2">File Format Guidelines:</h3>
@@ -915,7 +957,10 @@ function FileConversion() {
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium">File: {originalFilename}</h3>
                     <button
-                      onClick={() => setFileData(null)}
+                      onClick={() => {
+                        setFileData(null);
+                        setFileId(null);
+                      }}
                       className="text-gray-600 hover:text-gray-900"
                     >
                       Upload a different file

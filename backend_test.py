@@ -52,6 +52,64 @@ def create_test_csv():
     csv_buffer.seek(0)
     return csv_buffer.getvalue()
 
+def create_reference_test_csv():
+    """Create a CSV file with reference column containing debit/credit indicators"""
+    data = {
+        'Date': ['01/01/2023', '02/01/2023', '03/01/2023', '04/01/2023', '05/01/2023', '06/01/2023'],
+        'Reference': ['C', 'CR', 'Credit', 'D', 'DB', 'Debit'],
+        'Description': ['Credit Transaction', 'Credit Entry', 'Credit Payment', 'Debit Transaction', 'Debit Entry', 'Debit Payment'],
+        'Amount': [100.50, 250.75, 1000.00, 150.25, 300.00, 500.00]
+    }
+    df = pd.DataFrame(data)
+    csv_buffer = StringIO()
+    df.to_csv(csv_buffer, index=False)
+    csv_buffer.seek(0)
+    return csv_buffer.getvalue()
+
+def create_mixed_reference_csv():
+    """Create a CSV file with mixed reference indicators"""
+    data = {
+        'Date': ['01/01/2023', '02/01/2023', '03/01/2023', '04/01/2023'],
+        'Reference': ['c', 'dr', 'CREDIT', 'debit'],
+        'Description': ['Lowercase credit', 'Lowercase debit', 'Uppercase credit', 'Lowercase debit'],
+        'Amount': [100.00, 200.00, 300.00, 400.00]
+    }
+    df = pd.DataFrame(data)
+    csv_buffer = StringIO()
+    df.to_csv(csv_buffer, index=False)
+    csv_buffer.seek(0)
+    return csv_buffer.getvalue()
+
+def create_bulk_test_files():
+    """Create multiple test files for bulk upload testing"""
+    files = []
+    
+    # File 1: Basic CSV
+    data1 = {
+        'Date': ['01/01/2023', '02/01/2023'],
+        'Ref': ['REF001', 'REF002'],
+        'Desc': ['Test 1', 'Test 2'],
+        'Amount': [100.00, 200.00]
+    }
+    df1 = pd.DataFrame(data1)
+    csv_buffer1 = StringIO()
+    df1.to_csv(csv_buffer1, index=False)
+    files.append(('file1.csv', csv_buffer1.getvalue()))
+    
+    # File 2: CSV with reference indicators
+    data2 = {
+        'Date': ['03/01/2023', '04/01/2023'],
+        'Reference': ['C', 'D'],
+        'Description': ['Credit entry', 'Debit entry'],
+        'Amount': [300.00, 400.00]
+    }
+    df2 = pd.DataFrame(data2)
+    csv_buffer2 = StringIO()
+    df2.to_csv(csv_buffer2, index=False)
+    files.append(('file2.csv', csv_buffer2.getvalue()))
+    
+    return files
+
 def test_status_endpoint():
     """Test the status endpoint"""
     print("\n--- Testing /api/status endpoint ---")

@@ -185,7 +185,7 @@ function FileUploader({ onFileProcessed }) {
 }
 
 // Column Mapper Component
-function ColumnMapper({ originalColumns, columnMapping, onMappingChange, onUpdatePreview }) {
+function ColumnMapper({ originalColumns, columnMapping, onMappingChange, onUpdatePreview, isUpdatingPreview }) {
   const targetColumns = [
     { id: 'A', name: 'Date (dd/mm/yyyy)' },
     { id: 'B', name: 'Cheque No.' },

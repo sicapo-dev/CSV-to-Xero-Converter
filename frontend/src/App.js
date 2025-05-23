@@ -212,8 +212,7 @@ function ColumnMapper({ originalColumns, columnMapping, onMappingChange, onUpdat
     { id: 'B', name: 'Cheque No.' },
     { id: 'C', name: 'Description' },
     { id: 'D', name: 'Amount' },
-    { id: 'E', name: 'Reference' },
-    { id: 'transaction_type', name: 'Transaction Type (optional)' }
+    { id: 'E', name: 'Reference' }
   ];
 
   const handleMappingChange = (targetColumn, sourceColumn) => {

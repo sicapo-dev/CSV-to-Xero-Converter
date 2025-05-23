@@ -75,11 +75,41 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
 
+class Folder(BaseModel):
+    id: Optional[str] = None
+    user_id: str
+    name: str
+    parent_folder_id: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
+
+class File(BaseModel):
+    id: Optional[str] = None
+    user_id: str
+    folder_id: Optional[str] = None
+    original_filename: str
+    file_type: str  # "csv" or "xlsx"
+    size_bytes: int
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
+
 class FileConversion(BaseModel):
     id: Optional[str] = None
     user_id: str
+    file_id: str
     original_filename: str
     formatted_filename: str
+    column_mapping: Dict[str, str]
     created_at: Optional[datetime] = None
     
     class Config:

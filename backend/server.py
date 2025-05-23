@@ -614,6 +614,11 @@ async def preview_conversion(
     current_user: User = Depends(get_current_user)
 ):
     try:
+        # Check if file exists and belongs to the user
+        file_record = db.files.find_one({"id": file_id, "user_id": current_user.id})
+        if not file_record:
+            raise HTTPException(status_code=404, detail="File not found")
+        
         # Load the original data
         with open(f"/tmp/{file_id}_original.json", "r") as f:
             records = json.load(f)
@@ -642,6 +647,7 @@ async def preview_conversion(
         
         # Return the formatted data for preview
         return {
+            "file_id": file_id,
             "formatted_data": safe_json_serialize(xero_df),
             "column_mapping": column_mapping,
             "message": "Preview updated with transaction type detection"

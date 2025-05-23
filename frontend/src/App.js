@@ -622,6 +622,7 @@ function FileConversion() {
                     originalColumns={fileData.original_columns}
                     columnMapping={columnMapping}
                     onMappingChange={setColumnMapping}
+                    onUpdatePreview={handleUpdatePreview}
                   />
                   
                   <div className="bg-gray-50 p-4 rounded-lg">

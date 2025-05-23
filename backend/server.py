@@ -422,20 +422,14 @@ async def convert_file(
     try:
         # Load the original data
         with open(f"/tmp/{file_id}_original.json", "r") as f:
-            df_json = f.read()
-            df = pd.read_json(df_json, orient="records")
-            
-            # Ensure we handle any NaN or infinite values
-            df = df.replace([float('inf'), -float('inf'), float('nan')], None)
+            records = json.load(f)
+            df = pd.DataFrame.from_records(records)
         
         # Parse column mappings
         column_mapping = json.loads(column_mappings)
         
         # Apply Xero format using the provided mapping
         xero_df = apply_xero_format(df, column_mapping)
-        
-        # Replace NaN and infinity values
-        xero_df = xero_df.replace([float('inf'), -float('inf'), float('nan')], None)
         
         # Generate output filename
         original_filename = f"{file_id}_original.json".split('_original.json')[0]
@@ -458,9 +452,24 @@ async def convert_file(
         }
         db.conversions.insert_one(conversion)
         
+        # Handle problematic values for JSON serialization
+        def safe_json_serialize(df):
+            # Replace problematic values
+            df_cleaned = df.copy()
+            # Replace inf/-inf with None
+            df_cleaned = df_cleaned.replace([np.inf, -np.inf], None)
+            # Convert to records
+            records = df_cleaned.to_dict(orient="records")
+            # Convert all NaN to None for JSON serialization
+            for record in records:
+                for k, v in record.items():
+                    if isinstance(v, float) and np.isnan(v):
+                        record[k] = None
+            return records
+        
         # Return the formatted data and download link
         return {
-            "formatted_data": json.loads(xero_df.replace([float('inf'), -float('inf')], np.nan).fillna("").to_json(orient="records")),
+            "formatted_data": safe_json_serialize(xero_df),
             "formatted_filename": formatted_filename,
             "conversion_id": conversion["id"]
         }

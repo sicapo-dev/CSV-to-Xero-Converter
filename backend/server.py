@@ -408,12 +408,18 @@ async def convert_file(
         with open(f"/tmp/{file_id}_original.json", "r") as f:
             df_json = f.read()
             df = pd.read_json(df_json, orient="records")
+            
+            # Ensure we handle any NaN or infinite values
+            df = df.replace([float('inf'), -float('inf'), float('nan')], None)
         
         # Parse column mappings
         column_mapping = json.loads(column_mappings)
         
         # Apply Xero format using the provided mapping
         xero_df = apply_xero_format(df, column_mapping)
+        
+        # Replace NaN and infinity values
+        xero_df = xero_df.replace([float('inf'), -float('inf'), float('nan')], None)
         
         # Generate output filename
         original_filename = f"{file_id}_original.json".split('_original.json')[0]
@@ -438,12 +444,13 @@ async def convert_file(
         
         # Return the formatted data and download link
         return {
-            "formatted_data": xero_df.to_dict(orient="records"),
+            "formatted_data": xero_df.replace([float('inf'), -float('inf')], None).fillna(None).to_dict(orient="records"),
             "formatted_filename": formatted_filename,
             "conversion_id": conversion["id"]
         }
     
     except Exception as e:
+        print(f"Error in convert_file: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/conversions")

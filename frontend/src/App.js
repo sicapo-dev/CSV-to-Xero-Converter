@@ -955,7 +955,7 @@ function FileConversion() {
                       <li>Amount values should be numeric (positive for income, negative for expenses)</li>
                     </ul>
                   </div>
-                  <FileUploader onFileProcessed={handleFileProcessed} />
+                  <FileUploader onFileProcessed={handleFileProcessed} folderId={folderId} />
                 </div>
               ) : (
                 <div className="space-y-6">

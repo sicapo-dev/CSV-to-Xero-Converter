@@ -304,15 +304,40 @@ function Dashboard() {
     try {
       const token = localStorage.getItem('token');
       
-      // Create a direct download link to the file
-      const downloadUrl = `${BACKEND_URL}/api/download/${conversionId}`;
+      // Use axios to get the file as a blob
+      const response = await axios.get(`${BACKEND_URL}/api/download/${conversionId}`, {
+        responseType: 'blob',
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
-      // Open the download URL in a new tab/window
-      window.open(downloadUrl, '_blank');
+      // Create a URL for the blob
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      
+      // Create a temporary link element
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Set the filename from the Content-Disposition header if available
+      // or use a default name
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'xero_formatted.csv';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+        if (filenameMatch && filenameMatch.length === 2) {
+          filename = filenameMatch[1];
+        }
+      }
+      link.setAttribute('download', filename);
+      
+      // Append the link to the body, click it, and remove it
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
       toast.success('Download started!');
     } catch (error) {
       toast.error('Failed to download file: ' + (error.response?.data?.detail || 'Unknown error'));
+      console.error('Download error:', error);
     }
   };
 

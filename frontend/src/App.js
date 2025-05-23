@@ -230,6 +230,7 @@ function ColumnMapper({ originalColumns, columnMapping, onMappingChange, onUpdat
           <li>Date will be formatted as dd/mm/yyyy</li>
           <li>Amount: Debits will be prefixed with a negative sign</li>
           <li>Reference: Will add 'D' for debits and 'C' for credits</li>
+          <li>Transaction Type: If provided, will use values like 'DB', 'DR', 'CR' to determine debit/credit status</li>
         </ul>
       </div>
       <div className="mt-6 flex justify-end">

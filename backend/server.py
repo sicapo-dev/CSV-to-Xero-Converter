@@ -949,6 +949,63 @@ async def delete_file(file_id: str, current_user: User = Depends(get_current_use
         print(f"Error in delete_file: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/files/{file_id}")
+async def get_file(file_id: str, current_user: User = Depends(get_current_user)):
+    try:
+        # Check if file exists and belongs to the user
+        file_record = db.files.find_one({"id": file_id, "user_id": current_user.id})
+        if not file_record:
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Load the original data
+        with open(f"/tmp/{file_id}_original.json", "r") as f:
+            records = json.load(f)
+            df = pd.DataFrame.from_records(records)
+        
+        # Auto-map columns
+        column_mapping = auto_map_columns(df)
+        
+        # Apply Xero format using the auto-mapping
+        xero_df = apply_xero_format(df, column_mapping)
+        
+        # Handle problematic values for JSON serialization
+        def safe_json_serialize(df):
+            # Replace problematic values
+            df_cleaned = df.copy()
+            # Replace inf/-inf with None
+            df_cleaned = df_cleaned.replace([np.inf, -np.inf], None)
+            # Convert to records
+            records = df_cleaned.to_dict(orient="records")
+            # Convert all NaN to None for JSON serialization
+            for record in records:
+                for k, v in record.items():
+                    if isinstance(v, float) and np.isnan(v):
+                        record[k] = None
+            return records
+        
+        # Get column names for frontend display
+        original_columns = df.columns.tolist()
+        
+        # Prepare response
+        response = {
+            "file_id": file_id,
+            "original_filename": file_record["original_filename"],
+            "file_type": file_record["file_type"],
+            "size_bytes": file_record["size_bytes"],
+            "folder_id": file_record.get("folder_id"),
+            "created_at": file_record["created_at"].isoformat() if "created_at" in file_record else None,
+            "original_data": safe_json_serialize(df.head(50)),
+            "formatted_data": safe_json_serialize(xero_df.head(50)),
+            "original_columns": original_columns,
+            "column_mapping": column_mapping
+        }
+        
+        return response
+    
+    except Exception as e:
+        print(f"Error in get_file: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Status endpoint
 @app.get("/api/status")
 async def get_status():

@@ -257,8 +257,8 @@ def format_date(date_str):
 def format_amount(amount_str, reference_str=None):
     """
     Format amount for Xero based on reference value:
-    - If reference contains "C", "CR", or "Credit" -> Add minus prefix
-    - If reference contains "D", "DB", or "Debit" -> Leave as is (positive)
+    - If reference contains "C", "CR", or "Credit" -> Leave as positive
+    - If reference contains "D", "DB", or "Debit" -> Add minus prefix
     - If no reference provided, keep original behavior
     """
     # Convert to string if not already
@@ -275,16 +275,16 @@ def format_amount(amount_str, reference_str=None):
         if reference_str is not None and isinstance(reference_str, str):
             reference_lower = reference_str.lower()
             
-            # Reference indicates Credit -> add minus prefix
+            # Reference indicates Credit -> leave as positive
             if any(term in reference_lower for term in ['c', 'cr', 'credit']):
-                if amount > 0:  # Only add minus if positive
-                    return f"-{cleaned_amount}"
-                return cleaned_amount
-            
-            # Reference indicates Debit -> leave as is
-            elif any(term in reference_lower for term in ['d', 'db', 'debit']):
                 if amount < 0:  # Remove minus if negative
                     return cleaned_amount.replace('-', '')
+                return cleaned_amount
+            
+            # Reference indicates Debit -> add minus prefix
+            elif any(term in reference_lower for term in ['d', 'db', 'debit']):
+                if amount > 0:  # Only add minus if positive
+                    return f"-{cleaned_amount}"
                 return cleaned_amount
         
         # Default behavior (no reference or unrecognized reference)

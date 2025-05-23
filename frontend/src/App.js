@@ -109,6 +109,7 @@ function ProtectedRoute({ children }) {
 // File Upload Component
 function FileUploader({ onFileProcessed }) {
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
   
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
@@ -119,6 +120,7 @@ function FileUploader({ onFileProcessed }) {
     onDrop: async (acceptedFiles) => {
       if (acceptedFiles.length === 0) return;
       
+      setUploadError(null);
       const file = acceptedFiles[0];
       setIsUploading(true);
       
@@ -137,7 +139,10 @@ function FileUploader({ onFileProcessed }) {
         onFileProcessed(response.data, file.name);
         toast.success('File uploaded successfully!');
       } catch (error) {
-        toast.error('Upload failed: ' + (error.response?.data?.detail || 'Unknown error'));
+        const errorMessage = error.response?.data?.detail || 'Unknown error occurred';
+        setUploadError(errorMessage);
+        toast.error('Upload failed: ' + errorMessage);
+        console.error('File upload error:', error);
       } finally {
         setIsUploading(false);
       }
@@ -165,6 +170,12 @@ function FileUploader({ onFileProcessed }) {
                 </span>
               </p>
               <p className="mt-1 text-xs text-gray-500">Files will be automatically mapped to Xero format</p>
+              {uploadError && (
+                <div className="mt-2 text-sm text-red-600 bg-red-50 p-2 rounded">
+                  <p className="font-semibold">Error uploading file:</p>
+                  <p>{uploadError}</p>
+                </div>
+              )}
             </>
           )}
         </div>

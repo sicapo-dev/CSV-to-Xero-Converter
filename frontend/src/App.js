@@ -458,6 +458,7 @@ function FileConversion() {
   const [formattedData, setFormattedData] = useState([]);
   const [formattedFilename, setFormattedFilename] = useState('');
   const [isConverting, setIsConverting] = useState(false);
+  const [isUpdatingPreview, setIsUpdatingPreview] = useState(false);
 
   const handleFileProcessed = (data, filename) => {
     setFileData(data);
@@ -465,6 +466,35 @@ function FileConversion() {
     setColumnMapping(data.column_mapping);
     setFormattedData(data.formatted_data);
     setFormattedFilename(filename.replace(/\.[^/.]+$/, '') + '_formatted.csv');
+  };
+
+  const handleUpdatePreview = async () => {
+    if (!fileData) return;
+    
+    setIsUpdatingPreview(true);
+    
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('file_id', fileData.file_id);
+      formData.append('column_mappings', JSON.stringify(columnMapping));
+      formData.append('preview_only', 'true');
+      
+      const response = await axios.post(`${BACKEND_URL}/api/preview`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      setFormattedData(response.data.formatted_data);
+      toast.success('Preview updated with new column mapping!');
+    } catch (error) {
+      toast.error('Failed to update preview: ' + (error.response?.data?.detail || 'Unknown error'));
+      console.error('Preview update error:', error);
+    } finally {
+      setIsUpdatingPreview(false);
+    }
   };
 
   const handleConvertFile = async () => {

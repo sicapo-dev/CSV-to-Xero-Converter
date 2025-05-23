@@ -492,7 +492,19 @@ function FileConversion() {
               <h2 className="text-lg font-medium text-gray-900 mb-4">Convert File to Xero Format</h2>
               
               {!fileData ? (
-                <FileUploader onFileProcessed={handleFileProcessed} />
+                <div>
+                  <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                    <h3 className="text-md font-medium text-blue-800 mb-2">File Format Guidelines:</h3>
+                    <ul className="list-disc pl-5 text-sm text-blue-700 space-y-1">
+                      <li>Upload CSV or XLSX files containing financial transaction data</li>
+                      <li>Ensure your file has columns for date, description, and amount</li>
+                      <li>Files with headers will be automatically mapped to Xero format</li>
+                      <li>Dates should be in a standard format (e.g., YYYY-MM-DD or MM/DD/YYYY)</li>
+                      <li>Amount values should be numeric (positive for income, negative for expenses)</li>
+                    </ul>
+                  </div>
+                  <FileUploader onFileProcessed={handleFileProcessed} />
+                </div>
               ) : (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">

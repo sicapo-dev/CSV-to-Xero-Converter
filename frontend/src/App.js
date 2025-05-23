@@ -123,7 +123,7 @@ function ProtectedRoute({ children }) {
 }
 
 // File Upload Component
-function FileUploader({ onFileProcessed }) {
+function FileUploader({ onFileProcessed, folderId }) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
   
@@ -143,6 +143,11 @@ function FileUploader({ onFileProcessed }) {
       try {
         const formData = new FormData();
         formData.append('file', file);
+        
+        // Add folder ID if provided
+        if (folderId) {
+          formData.append('folder_id', folderId);
+        }
         
         const token = localStorage.getItem('token');
         const response = await axios.post(`${BACKEND_URL}/api/upload`, formData, {

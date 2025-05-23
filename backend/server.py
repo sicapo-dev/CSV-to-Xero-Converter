@@ -483,7 +483,8 @@ async def preview_conversion(
         # Return the formatted data for preview
         return {
             "formatted_data": safe_json_serialize(xero_df),
-            "column_mapping": column_mapping
+            "column_mapping": column_mapping,
+            "message": "Preview updated with transaction type detection"
         }
     
     except Exception as e:

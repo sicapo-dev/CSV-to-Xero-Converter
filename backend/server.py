@@ -254,11 +254,12 @@ def format_date(date_str):
         # Return the original string if parsing fails
         return date_str
 
-def format_amount(amount_str, use_transaction_type=False):
+def format_amount(amount_str, reference_str=None):
     """
-    Format amount for Xero:
-    - If using transaction type column, don't modify the sign
-    - If not using transaction type, prefix positive amounts with negative sign (for debits)
+    Format amount for Xero based on reference value:
+    - If reference contains "C", "CR", or "Credit" -> Add minus prefix
+    - If reference contains "D", "DB", or "Debit" -> Leave as is (positive)
+    - If no reference provided, keep original behavior
     """
     # Convert to string if not already
     amount_str = str(amount_str) if amount_str is not None else ""
@@ -267,18 +268,28 @@ def format_amount(amount_str, use_transaction_type=False):
     cleaned_amount = re.sub(r'[^\d.-]', '', amount_str)
     
     try:
-        # Convert to float to determine if positive or negative
+        # Convert to float
         amount = float(cleaned_amount)
         
-        # If we're using a transaction type column, don't modify the sign
-        if use_transaction_type:
-            return cleaned_amount
+        # Check reference if provided
+        if reference_str is not None and isinstance(reference_str, str):
+            reference_lower = reference_str.lower()
+            
+            # Reference indicates Credit -> add minus prefix
+            if any(term in reference_lower for term in ['c', 'cr', 'credit']):
+                if amount > 0:  # Only add minus if positive
+                    return f"-{cleaned_amount}"
+                return cleaned_amount
+            
+            # Reference indicates Debit -> leave as is
+            elif any(term in reference_lower for term in ['d', 'db', 'debit']):
+                if amount < 0:  # Remove minus if negative
+                    return cleaned_amount.replace('-', '')
+                return cleaned_amount
         
-        # Otherwise, prefix with negative sign if positive (debits are negative in Xero)
-        if amount > 0:
-            return f"-{cleaned_amount}"
-        else:
-            return cleaned_amount
+        # Default behavior (no reference or unrecognized reference)
+        # Keep as is
+        return cleaned_amount
     except:
         return amount_str
 

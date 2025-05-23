@@ -206,15 +206,18 @@ backend:
 
   - task: "Implement folder management"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 1
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "testing"
         comment: "CRITICAL ISSUE: All folder management operations (create, list, update, delete) fail with 500 Internal Server Error due to MongoDB ObjectId serialization issues. The backend logs show 'Object of type ObjectId is not JSON serializable' errors. This prevents users from organizing their files into folders."
+      - working: true
+        agent: "testing"
+        comment: "✅ FIXED: All folder management endpoints now working correctly. Create, read, update, delete operations all pass. Fixed ObjectId serialization and deprecated MongoDB count() method. Folder management is fully functional."
 
   - task: "Implement bulk file upload"
     implemented: true

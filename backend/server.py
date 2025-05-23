@@ -343,6 +343,9 @@ def apply_xero_format(df, column_mapping):
     """Apply Xero formatting rules to the data"""
     xero_df = pd.DataFrame()
     
+    # Check if we're using a transaction type column
+    has_transaction_type = 'transaction_type' in column_mapping and column_mapping['transaction_type']
+    
     # Format date (Column A)
     if 'A' in column_mapping and column_mapping['A']:
         xero_df['Date'] = df[column_mapping['A']].apply(format_date)
@@ -363,13 +366,14 @@ def apply_xero_format(df, column_mapping):
     
     # Format Amount (Column D)
     if 'D' in column_mapping and column_mapping['D']:
-        xero_df['Amount'] = df[column_mapping['D']].apply(format_amount)
+        # Pass whether we have a transaction type column to format_amount
+        xero_df['Amount'] = df[column_mapping['D']].apply(lambda x: format_amount(x, has_transaction_type))
     else:
         xero_df['Amount'] = ""
     
     # Add Reference (Column E) - derived from Amount and Transaction Type if available
     if 'D' in column_mapping and column_mapping['D']:
-        if 'transaction_type' in column_mapping and column_mapping['transaction_type']:
+        if has_transaction_type:
             # We have both amount and transaction type
             xero_df['Reference'] = df.apply(
                 lambda row: add_reference_code(

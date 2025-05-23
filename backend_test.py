@@ -110,6 +110,318 @@ def create_bulk_test_files():
     
     return files
 
+def test_amount_prefix_logic():
+    """Test the amount prefix logic with reference-based formatting"""
+    print("\n--- Testing Amount Prefix Logic ---")
+    if not auth_token:
+        print("❌ Cannot test amount prefix logic without auth token")
+        return False
+    
+    try:
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        
+        # Test with reference indicators
+        csv_data = create_reference_test_csv()
+        files = {
+            'file': ('reference_test.csv', csv_data, 'text/csv')
+        }
+        
+        # Upload file
+        response = requests.post(f"{API_URL}/upload", headers=headers, files=files)
+        if response.status_code != 200:
+            print(f"❌ Failed to upload reference test file: {response.status_code}")
+            return False
+        
+        ref_file_id = response.json()["file_id"]
+        print(f"Uploaded reference test file with ID: {ref_file_id}")
+        
+        # Test conversion with reference-based mapping
+        column_mapping = {
+            "A": "Date",
+            "B": "Reference", 
+            "C": "Description",
+            "D": "Amount",
+            "E": "Amount"  # Reference will be derived from amount
+        }
+        
+        data = {
+            'file_id': ref_file_id,
+            'column_mappings': json.dumps(column_mapping),
+            'formatted_filename': f"reference_test_formatted_{uuid.uuid4()}.csv"
+        }
+        
+        response = requests.post(f"{API_URL}/convert", headers=headers, data=data)
+        if response.status_code != 200:
+            print(f"❌ Failed to convert reference test file: {response.status_code}")
+            return False
+        
+        formatted_data = response.json().get("formatted_data", [])
+        print(f"Converted {len(formatted_data)} rows")
+        
+        # Check amount formatting based on reference values
+        expected_results = [
+            {"reference": "C", "original_amount": 100.50, "should_be_negative": True},
+            {"reference": "CR", "original_amount": 250.75, "should_be_negative": True},
+            {"reference": "Credit", "original_amount": 1000.00, "should_be_negative": True},
+            {"reference": "D", "original_amount": 150.25, "should_be_negative": False},
+            {"reference": "DB", "original_amount": 300.00, "should_be_negative": False},
+            {"reference": "Debit", "original_amount": 500.00, "should_be_negative": False}
+        ]
+        
+        all_correct = True
+        for i, row in enumerate(formatted_data):
+            if i < len(expected_results):
+                expected = expected_results[i]
+                amount_str = str(row.get("Amount", ""))
+                
+                print(f"Row {i+1}: Reference='{expected['reference']}', Amount='{amount_str}'")
+                
+                if expected["should_be_negative"]:
+                    if not amount_str.startswith("-"):
+                        print(f"❌ Expected negative amount for {expected['reference']}, got: {amount_str}")
+                        all_correct = False
+                    else:
+                        print(f"✅ Correct negative amount for {expected['reference']}")
+                else:
+                    if amount_str.startswith("-"):
+                        print(f"❌ Expected positive amount for {expected['reference']}, got: {amount_str}")
+                        all_correct = False
+                    else:
+                        print(f"✅ Correct positive amount for {expected['reference']}")
+        
+        if all_correct:
+            test_results["amount_prefix_logic"] = True
+            print("✅ Amount prefix logic test passed")
+            return True
+        else:
+            print("❌ Amount prefix logic test failed")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error testing amount prefix logic: {str(e)}")
+        return False
+
+def test_folder_management():
+    """Test folder management endpoints"""
+    global folder_id
+    print("\n--- Testing Folder Management ---")
+    if not auth_token:
+        print("❌ Cannot test folder management without auth token")
+        return False
+    
+    try:
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        
+        # Test creating a folder
+        print("Testing folder creation...")
+        data = {"name": f"Test Folder {uuid.uuid4()}"}
+        response = requests.post(f"{API_URL}/folders", headers=headers, data=data)
+        if response.status_code != 200:
+            print(f"❌ Failed to create folder: {response.status_code}")
+            return False
+        
+        folder_id = response.json()["id"]
+        print(f"✅ Created folder with ID: {folder_id}")
+        
+        # Test listing folders
+        print("Testing folder listing...")
+        response = requests.get(f"{API_URL}/folders", headers=headers)
+        if response.status_code != 200:
+            print(f"❌ Failed to list folders: {response.status_code}")
+            return False
+        
+        folders = response.json()
+        print(f"✅ Listed {len(folders)} folders")
+        
+        # Test updating folder
+        print("Testing folder update...")
+        data = {"name": f"Updated Test Folder {uuid.uuid4()}"}
+        response = requests.put(f"{API_URL}/folders/{folder_id}", headers=headers, data=data)
+        if response.status_code != 200:
+            print(f"❌ Failed to update folder: {response.status_code}")
+            return False
+        
+        print("✅ Updated folder successfully")
+        
+        # Test getting files in folder (should be empty)
+        print("Testing files in folder...")
+        response = requests.get(f"{API_URL}/folders/{folder_id}/files", headers=headers)
+        if response.status_code != 200:
+            print(f"❌ Failed to get files in folder: {response.status_code}")
+            return False
+        
+        files_in_folder = response.json()
+        print(f"✅ Found {len(files_in_folder)} files in folder")
+        
+        # Test uploading a file to the folder
+        print("Testing file upload to folder...")
+        csv_data = create_test_csv()
+        files = {
+            'file': ('folder_test.csv', csv_data, 'text/csv')
+        }
+        data = {"folder_id": folder_id}
+        
+        response = requests.post(f"{API_URL}/upload", headers=headers, files=files, data=data)
+        if response.status_code != 200:
+            print(f"❌ Failed to upload file to folder: {response.status_code}")
+            return False
+        
+        folder_file_id = response.json()["file_id"]
+        print(f"✅ Uploaded file to folder with ID: {folder_file_id}")
+        
+        # Test moving file between folders
+        print("Testing file move...")
+        data = {"file_id": folder_file_id, "target_folder_id": "root"}
+        response = requests.post(f"{API_URL}/files/move", headers=headers, data=data)
+        if response.status_code != 200:
+            print(f"❌ Failed to move file: {response.status_code}")
+            return False
+        
+        print("✅ Moved file successfully")
+        
+        # Test deleting folder (should work now that file is moved)
+        print("Testing folder deletion...")
+        response = requests.delete(f"{API_URL}/folders/{folder_id}", headers=headers)
+        if response.status_code != 200:
+            print(f"❌ Failed to delete folder: {response.status_code}")
+            return False
+        
+        print("✅ Deleted folder successfully")
+        
+        test_results["folder_management"] = True
+        print("✅ Folder management test passed")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error testing folder management: {str(e)}")
+        return False
+
+def test_bulk_upload():
+    """Test bulk file upload functionality"""
+    print("\n--- Testing Bulk Upload ---")
+    if not auth_token:
+        print("❌ Cannot test bulk upload without auth token")
+        return False
+    
+    try:
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        
+        # Create test files
+        test_files = create_bulk_test_files()
+        
+        # Prepare files for upload
+        files = []
+        for filename, content in test_files:
+            files.append(('files', (filename, content, 'text/csv')))
+        
+        # Upload files
+        response = requests.post(f"{API_URL}/bulk-upload", headers=headers, files=files)
+        if response.status_code != 200:
+            print(f"❌ Failed bulk upload: {response.status_code}")
+            return False
+        
+        results = response.json().get("results", [])
+        print(f"Bulk upload results: {len(results)} files processed")
+        
+        # Check results
+        successful_uploads = 0
+        for result in results:
+            if result.get("success", False):
+                successful_uploads += 1
+                print(f"✅ {result['filename']}: Success")
+            else:
+                print(f"❌ {result['filename']}: {result.get('error', 'Unknown error')}")
+        
+        if successful_uploads == len(test_files):
+            test_results["bulk_upload"] = True
+            print("✅ Bulk upload test passed")
+            return True
+        else:
+            print(f"❌ Bulk upload test failed: {successful_uploads}/{len(test_files)} successful")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error testing bulk upload: {str(e)}")
+        return False
+
+def test_preview_functionality():
+    """Test the preview endpoint functionality"""
+    print("\n--- Testing Preview Functionality ---")
+    if not auth_token or not file_id:
+        print("❌ Cannot test preview functionality without auth token and file_id")
+        return False
+    
+    try:
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        
+        # Test preview with different column mappings
+        print("Testing preview with custom column mapping...")
+        
+        # Create a custom column mapping
+        column_mapping = {
+            "A": "TransactionDate",
+            "B": "Reference",
+            "C": "Description", 
+            "D": "Amount",
+            "E": "Amount"
+        }
+        
+        data = {
+            'file_id': file_id,
+            'column_mappings': json.dumps(column_mapping),
+            'preview_only': 'true'
+        }
+        
+        response = requests.post(f"{API_URL}/preview", headers=headers, data=data)
+        if response.status_code != 200:
+            print(f"❌ Failed to get preview: {response.status_code}")
+            return False
+        
+        preview_data = response.json()
+        print(f"✅ Preview returned {len(preview_data.get('formatted_data', []))} rows")
+        
+        # Test preview with different mapping
+        print("Testing preview with modified column mapping...")
+        
+        modified_mapping = {
+            "A": "Reference",  # Swap columns
+            "B": "TransactionDate",
+            "C": "Description",
+            "D": "Amount",
+            "E": "Amount"
+        }
+        
+        data = {
+            'file_id': file_id,
+            'column_mappings': json.dumps(modified_mapping),
+            'preview_only': 'true'
+        }
+        
+        response = requests.post(f"{API_URL}/preview", headers=headers, data=data)
+        if response.status_code != 200:
+            print(f"❌ Failed to get modified preview: {response.status_code}")
+            return False
+        
+        modified_preview = response.json()
+        print(f"✅ Modified preview returned {len(modified_preview.get('formatted_data', []))} rows")
+        
+        # Verify that the preview data changed
+        original_first_row = preview_data.get('formatted_data', [{}])[0] if preview_data.get('formatted_data') else {}
+        modified_first_row = modified_preview.get('formatted_data', [{}])[0] if modified_preview.get('formatted_data') else {}
+        
+        if original_first_row.get('Date') != modified_first_row.get('Date'):
+            print("✅ Preview correctly updated when column mapping changed")
+            test_results["preview_functionality"] = True
+            print("✅ Preview functionality test passed")
+            return True
+        else:
+            print("❌ Preview did not update when column mapping changed")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error testing preview functionality: {str(e)}")
+        return False
+
 def test_status_endpoint():
     """Test the status endpoint"""
     print("\n--- Testing /api/status endpoint ---")

@@ -16,6 +16,21 @@ code {
     monospace;
 }
 
+/* Logo styling */
+.logo-csv {
+  color: #4f46e5;
+  font-weight: bold;
+}
+
+.logo-xero {
+  color: #4f46e5;
+  font-weight: bold;
+}
+
+.logo-arrow {
+  color: #4f46e5;
+}
+
 /* Custom loader */
 .loader {
   border: 4px solid rgba(0, 0, 0, 0.1);

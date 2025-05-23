@@ -831,7 +831,15 @@ async def create_folder(name: str = Form(...), parent_folder_id: Optional[str] =
         
         db.folders.insert_one(folder)
         
-        return folder
+        # Return folder with serialized datetime objects
+        return {
+            "id": folder["id"],
+            "user_id": folder["user_id"],
+            "name": folder["name"],
+            "parent_folder_id": folder["parent_folder_id"],
+            "created_at": folder["created_at"].isoformat(),
+            "updated_at": folder["updated_at"].isoformat()
+        }
     
     except Exception as e:
         print(f"Error in create_folder: {str(e)}")

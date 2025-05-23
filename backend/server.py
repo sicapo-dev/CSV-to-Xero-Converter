@@ -224,7 +224,12 @@ def format_date(date_str):
         # Return the original string if parsing fails
         return date_str
 
-def format_amount(amount_str):
+def format_amount(amount_str, use_transaction_type=False):
+    """
+    Format amount for Xero:
+    - If using transaction type column, don't modify the sign
+    - If not using transaction type, prefix positive amounts with negative sign (for debits)
+    """
     # Convert to string if not already
     amount_str = str(amount_str) if amount_str is not None else ""
     
@@ -235,7 +240,11 @@ def format_amount(amount_str):
         # Convert to float to determine if positive or negative
         amount = float(cleaned_amount)
         
-        # Prefix with negative sign if positive (debits are negative in Xero)
+        # If we're using a transaction type column, don't modify the sign
+        if use_transaction_type:
+            return cleaned_amount
+        
+        # Otherwise, prefix with negative sign if positive (debits are negative in Xero)
         if amount > 0:
             return f"-{cleaned_amount}"
         else:

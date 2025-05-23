@@ -660,7 +660,8 @@ async def download_conversion(conversion_id: str, current_user: User = Depends(g
             raise HTTPException(status_code=404, detail="Conversion not found")
         
         # Get file path
-        file_path = f"/tmp/{conversion['formatted_filename']}"
+        file_id = conversion.get("file_id")
+        file_path = f"/tmp/{file_id}_{conversion['formatted_filename']}"
         
         # Check if file exists
         if not os.path.exists(file_path):

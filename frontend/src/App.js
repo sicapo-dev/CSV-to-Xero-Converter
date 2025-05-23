@@ -248,10 +248,8 @@ function ColumnMapper({ originalColumns, columnMapping, onMappingChange, onUpdat
         <p><strong>Note:</strong></p>
         <ul className="list-disc pl-5 space-y-1">
           <li>Date will be formatted as dd/mm/yyyy</li>
-          <li>Amount: When no Transaction Type is provided, debits will be prefixed with a negative sign</li>
-          <li>Amount: When Transaction Type is provided, original amount signs will be preserved</li>
-          <li>Reference: Will add 'D' for debits and 'C' for credits based on Transaction Type or amount sign</li>
-          <li>Transaction Type: If provided, values like 'DB', 'DR', 'CR' will determine debit/credit status</li>
+          <li>Amount: Reference column values (C/CR/Credit vs D/DB/Debit) will determine the amount sign</li>
+          <li>Reference: Will be auto-generated with 'D' for debits and 'C' for credits</li>
         </ul>
       </div>
       <div className="mt-6 flex justify-end">

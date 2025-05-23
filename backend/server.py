@@ -445,7 +445,7 @@ async def convert_file(
         
         # Return the formatted data and download link
         return {
-            "formatted_data": xero_df.replace([float('inf'), -float('inf')], None).fillna(None).to_dict(orient="records"),
+            "formatted_data": json.loads(xero_df.replace([float('inf'), -float('inf')], np.nan).fillna("").to_json(orient="records")),
             "formatted_filename": formatted_filename,
             "conversion_id": conversion["id"]
         }

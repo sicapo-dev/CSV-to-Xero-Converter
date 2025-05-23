@@ -342,12 +342,8 @@ metadata:
 
 test_plan:
   current_focus: 
-    - "Implement auto-mapping to Xero format"
-    - "Implement folder management"
-    - "Implement file conversion history"
-  stuck_tasks: 
-    - "Implement auto-mapping to Xero format"
-    - "Implement folder management"
+    - "All critical backend issues resolved"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 

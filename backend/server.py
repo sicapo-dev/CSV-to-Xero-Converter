@@ -2,7 +2,6 @@ import os
 import pandas as pd
 import numpy as np
 import uuid
-import numpy as np
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, Form, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm

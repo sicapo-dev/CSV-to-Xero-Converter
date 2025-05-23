@@ -368,15 +368,25 @@ async def upload_file(file: UploadFile = File(...)):
         # Apply Xero format using the auto-mapping
         xero_df = apply_xero_format(df, column_mapping)
         
-        # Convert to JSON-safe format for response
-        # Replace NaN, Infinity, and -Infinity with None to avoid JSON serialization issues
-        original_data = json.loads(df.head(50).replace([float('inf'), -float('inf')], np.nan).fillna("").to_json(orient="records"))
-        formatted_data = json.loads(xero_df.head(50).replace([float('inf'), -float('inf')], np.nan).fillna("").to_json(orient="records"))
+        # Handle problematic values for JSON serialization
+        def safe_json_serialize(df):
+            # Replace problematic values
+            df_cleaned = df.copy()
+            # Replace inf/-inf with None
+            df_cleaned = df_cleaned.replace([np.inf, -np.inf], None)
+            # Convert to records
+            records = df_cleaned.to_dict(orient="records")
+            # Convert all NaN to None for JSON serialization
+            for record in records:
+                for k, v in record.items():
+                    if isinstance(v, float) and np.isnan(v):
+                        record[k] = None
+            return records
         
         # Prepare response
         response = {
-            "original_data": original_data,
-            "formatted_data": formatted_data,
+            "original_data": safe_json_serialize(df.head(50)),
+            "formatted_data": safe_json_serialize(xero_df.head(50)),
             "original_columns": original_columns,
             "column_mapping": column_mapping,
             "file_id": str(uuid.uuid4()),
@@ -385,11 +395,16 @@ async def upload_file(file: UploadFile = File(...)):
         
         # Store the dataframes in a temporary storage (could use Redis in production)
         # For simplicity, we'll use a file on disk
-        # Clean the dataframe before storing to ensure JSON compatibility
-        clean_df = df.replace([float('inf'), -float('inf')], None).fillna(None)
-        df_json = clean_df.to_json(orient="records")
+        # Clean the dataframe before storing
+        clean_df = df.replace([np.inf, -np.inf], None)
+        records = clean_df.to_dict(orient="records")
+        for record in records:
+            for k, v in record.items():
+                if isinstance(v, float) and np.isnan(v):
+                    record[k] = None
+        
         with open(f"/tmp/{response['file_id']}_original.json", "w") as f:
-            f.write(df_json)
+            json.dump(records, f)
         
         return response
     

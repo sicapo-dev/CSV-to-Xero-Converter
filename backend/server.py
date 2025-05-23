@@ -274,7 +274,7 @@ def auto_map_columns(df):
     columns = df.columns.tolist()
     
     # Look for date column
-    date_candidates = [col for col in columns if 'date' in col.lower()]
+    date_candidates = [col for col in columns if any(term in col.lower() for term in ['date', 'dt', 'day'])]
     if date_candidates:
         column_mapping['A'] = date_candidates[0]
     else:
@@ -287,19 +287,24 @@ def auto_map_columns(df):
                     break
     
     # Look for cheque/reference number
-    cheque_candidates = [col for col in columns if any(term in col.lower() for term in ['cheque', 'check', 'ref', 'reference', 'no'])]
+    cheque_candidates = [col for col in columns if any(term in col.lower() for term in ['cheque', 'check', 'ref', 'reference', 'no', 'num', 'number', 'id'])]
     if cheque_candidates:
         column_mapping['B'] = cheque_candidates[0]
     
     # Look for description
-    desc_candidates = [col for col in columns if any(term in col.lower() for term in ['desc', 'narration', 'details', 'memo', 'note'])]
+    desc_candidates = [col for col in columns if any(term in col.lower() for term in ['desc', 'narration', 'details', 'memo', 'note', 'particular', 'narr', 'transaction', 'name'])]
     if desc_candidates:
         column_mapping['C'] = desc_candidates[0]
     
     # Look for amount
-    amount_candidates = [col for col in columns if any(term in col.lower() for term in ['amount', 'sum', 'value', 'debit', 'credit'])]
+    amount_candidates = [col for col in columns if any(term in col.lower() for term in ['amount', 'sum', 'value', 'debit', 'credit', 'amt'])]
     if amount_candidates:
         column_mapping['D'] = amount_candidates[0]
+    
+    # Look for transaction type column (for reference field)
+    type_candidates = [col for col in columns if any(term in col.lower() for term in ['type', 'transaction type', 'tr type', 'db/cr', 'dr/cr', 'debit/credit'])]
+    if type_candidates:
+        column_mapping['transaction_type'] = type_candidates[0]
     
     # If we couldn't find specific columns, make best guesses
     if 'A' not in column_mapping and len(columns) > 0:
@@ -319,9 +324,9 @@ def auto_map_columns(df):
         else:
             column_mapping['D'] = columns[3] if len(columns) > 3 else ""
     
-    # For reference, we'll derive it from the amount
+    # For reference, we'll derive it from the amount and transaction type if available
     if 'D' in column_mapping:
-        column_mapping['E'] = column_mapping['D']  # Reference will be derived from amount
+        column_mapping['E'] = column_mapping['D']  # Reference will be derived from amount and transaction type
     
     return column_mapping
 

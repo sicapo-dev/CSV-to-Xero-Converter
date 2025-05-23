@@ -358,9 +358,20 @@ def apply_xero_format(df, column_mapping):
     else:
         xero_df['Amount'] = ""
     
-    # Add Reference (Column E) - derived from Amount
+    # Add Reference (Column E) - derived from Amount and Transaction Type if available
     if 'D' in column_mapping and column_mapping['D']:
-        xero_df['Reference'] = df[column_mapping['D']].apply(add_reference_code)
+        if 'transaction_type' in column_mapping and column_mapping['transaction_type']:
+            # We have both amount and transaction type
+            xero_df['Reference'] = df.apply(
+                lambda row: add_reference_code(
+                    row[column_mapping['D']], 
+                    row[column_mapping['transaction_type']] if pd.notna(row[column_mapping['transaction_type']]) else None
+                ), 
+                axis=1
+            )
+        else:
+            # We only have amount
+            xero_df['Reference'] = df[column_mapping['D']].apply(add_reference_code)
     else:
         xero_df['Reference'] = ""
     

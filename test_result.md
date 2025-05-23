@@ -198,6 +198,42 @@ backend:
         agent: "testing"
         comment: "Download endpoint has JSON parsing issues. The endpoint returns data but there are JSON serialization problems that prevent proper file downloads. This affects the conversion history functionality."
 
+  - task: "Implement folder management"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 1
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL ISSUE: All folder management operations (create, list, update, delete) fail with 500 Internal Server Error due to MongoDB ObjectId serialization issues. The backend logs show 'Object of type ObjectId is not JSON serializable' errors. This prevents users from organizing their files into folders."
+
+  - task: "Implement bulk file upload"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Bulk upload functionality is working correctly. Successfully uploaded multiple CSV files simultaneously and received proper success/failure status for each file."
+
+  - task: "Implement preview functionality"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Preview functionality is working correctly. The /api/preview endpoint properly updates when column mappings change, allowing users to see how their mapping changes affect the formatted data without completing the full conversion."
+
 frontend:
   - task: "Create file upload interface"
     implemented: true

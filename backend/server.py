@@ -639,6 +639,184 @@ async def download_conversion(conversion_id: str, current_user: User = Depends(g
         print(f"Error in download_conversion: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# Folder Management endpoints
+@app.get("/api/folders")
+async def get_folders(current_user: User = Depends(get_current_user)):
+    try:
+        # Get all folders for the current user
+        folders = list(db.folders.find({"user_id": current_user.id}).sort("name", 1))
+        
+        # Parse the MongoDB BSON to JSON
+        return json.loads(dumps(folders))
+    
+    except Exception as e:
+        print(f"Error in get_folders: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/folders")
+async def create_folder(name: str = Form(...), parent_folder_id: Optional[str] = Form(None), current_user: User = Depends(get_current_user)):
+    try:
+        # Validate parent folder if provided
+        if parent_folder_id:
+            parent_folder = db.folders.find_one({"id": parent_folder_id, "user_id": current_user.id})
+            if not parent_folder:
+                raise HTTPException(status_code=404, detail="Parent folder not found")
+        
+        # Create new folder
+        folder = {
+            "id": str(uuid.uuid4()),
+            "user_id": current_user.id,
+            "name": name,
+            "parent_folder_id": parent_folder_id,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        
+        db.folders.insert_one(folder)
+        
+        return folder
+    
+    except Exception as e:
+        print(f"Error in create_folder: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/folders/{folder_id}")
+async def update_folder(folder_id: str, name: str = Form(...), current_user: User = Depends(get_current_user)):
+    try:
+        # Check if folder exists and belongs to the user
+        folder = db.folders.find_one({"id": folder_id, "user_id": current_user.id})
+        if not folder:
+            raise HTTPException(status_code=404, detail="Folder not found")
+        
+        # Update folder
+        db.folders.update_one(
+            {"id": folder_id},
+            {"$set": {"name": name, "updated_at": datetime.utcnow()}}
+        )
+        
+        # Get updated folder
+        updated_folder = db.folders.find_one({"id": folder_id})
+        
+        return json.loads(dumps(updated_folder))
+    
+    except Exception as e:
+        print(f"Error in update_folder: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/folders/{folder_id}")
+async def delete_folder(folder_id: str, current_user: User = Depends(get_current_user)):
+    try:
+        # Check if folder exists and belongs to the user
+        folder = db.folders.find_one({"id": folder_id, "user_id": current_user.id})
+        if not folder:
+            raise HTTPException(status_code=404, detail="Folder not found")
+        
+        # Check if folder has files
+        files = db.files.find({"folder_id": folder_id})
+        if files.count() > 0:
+            raise HTTPException(status_code=400, detail="Cannot delete folder with files. Please move or delete files first.")
+        
+        # Check if folder has subfolders
+        subfolders = db.folders.find({"parent_folder_id": folder_id})
+        if subfolders.count() > 0:
+            raise HTTPException(status_code=400, detail="Cannot delete folder with subfolders. Please delete subfolders first.")
+        
+        # Delete folder
+        db.folders.delete_one({"id": folder_id})
+        
+        return {"message": "Folder deleted successfully"}
+    
+    except Exception as e:
+        print(f"Error in delete_folder: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# File Management endpoints
+@app.get("/api/folders/{folder_id}/files")
+async def get_files_in_folder(folder_id: str, current_user: User = Depends(get_current_user)):
+    try:
+        # Check if folder exists and belongs to the user
+        if folder_id != "root":
+            folder = db.folders.find_one({"id": folder_id, "user_id": current_user.id})
+            if not folder:
+                raise HTTPException(status_code=404, detail="Folder not found")
+            
+            # Get all files in the folder
+            files = list(db.files.find({"folder_id": folder_id, "user_id": current_user.id}).sort("created_at", -1))
+        else:
+            # Root folder - get files with no folder_id or null folder_id
+            files = list(db.files.find({
+                "$and": [
+                    {"user_id": current_user.id},
+                    {"$or": [
+                        {"folder_id": None},
+                        {"folder_id": "root"}
+                    ]}
+                ]
+            }).sort("created_at", -1))
+        
+        # Get conversions for each file
+        for file in files:
+            conversions = list(db.conversions.find({"file_id": file["id"]}).sort("created_at", -1))
+            file["conversions"] = conversions
+        
+        # Parse the MongoDB BSON to JSON
+        return json.loads(dumps(files))
+    
+    except Exception as e:
+        print(f"Error in get_files_in_folder: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/files/move")
+async def move_file(file_id: str = Form(...), target_folder_id: Optional[str] = Form(None), current_user: User = Depends(get_current_user)):
+    try:
+        # Check if file exists and belongs to the user
+        file = db.files.find_one({"id": file_id, "user_id": current_user.id})
+        if not file:
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Check if target folder exists if not root
+        if target_folder_id and target_folder_id != "root":
+            target_folder = db.folders.find_one({"id": target_folder_id, "user_id": current_user.id})
+            if not target_folder:
+                raise HTTPException(status_code=404, detail="Target folder not found")
+        
+        # Update file folder
+        db.files.update_one(
+            {"id": file_id},
+            {"$set": {"folder_id": target_folder_id if target_folder_id else None, "updated_at": datetime.utcnow()}}
+        )
+        
+        return {"message": "File moved successfully"}
+    
+    except Exception as e:
+        print(f"Error in move_file: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/files/{file_id}")
+async def delete_file(file_id: str, current_user: User = Depends(get_current_user)):
+    try:
+        # Check if file exists and belongs to the user
+        file = db.files.find_one({"id": file_id, "user_id": current_user.id})
+        if not file:
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Delete any associated conversions
+        db.conversions.delete_many({"file_id": file_id})
+        
+        # Delete the file from database
+        db.files.delete_one({"id": file_id})
+        
+        # Delete file from disk if it exists
+        original_file_path = f"/tmp/{file_id}_original.json"
+        if os.path.exists(original_file_path):
+            os.remove(original_file_path)
+        
+        return {"message": "File deleted successfully"}
+    
+    except Exception as e:
+        print(f"Error in delete_file: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Status endpoint
 @app.get("/api/status")
 async def get_status():

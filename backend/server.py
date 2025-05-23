@@ -913,11 +913,18 @@ async def get_files_in_folder(folder_id: str, current_user: User = Depends(get_c
         
         # Get conversions for each file
         for file in files:
+            # Convert ObjectId to string for file
+            if "_id" in file:
+                file["_id"] = str(file["_id"])
+            
             conversions = list(db.conversions.find({"file_id": file["id"]}).sort("created_at", -1))
+            # Convert ObjectId to string for conversions
+            for conversion in conversions:
+                if "_id" in conversion:
+                    conversion["_id"] = str(conversion["_id"])
             file["conversions"] = conversions
         
-        # Parse the MongoDB BSON to JSON
-        return json.loads(dumps(files))
+        return files
     
     except Exception as e:
         print(f"Error in get_files_in_folder: {str(e)}")

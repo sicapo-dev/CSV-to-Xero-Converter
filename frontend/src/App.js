@@ -314,24 +314,171 @@ function DataTable({ data, title }) {
 function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [conversions, setConversions] = useState([]);
+  const [folders, setFolders] = useState([]);
+  const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedFolderId, setSelectedFolderId] = useState('root');
+  const [selectedFileId, setSelectedFileId] = useState(null);
+  const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
+  const [showMoveFileModal, setShowMoveFileModal] = useState(false);
+  const [fileToMove, setFileToMove] = useState(null);
+  const [showBulkUploader, setShowBulkUploader] = useState(false);
 
   useEffect(() => {
-    fetchConversions();
+    fetchFolders();
   }, []);
 
-  const fetchConversions = async () => {
+  useEffect(() => {
+    if (selectedFolderId) {
+      fetchFiles(selectedFolderId);
+    }
+  }, [selectedFolderId]);
+
+  const fetchFolders = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${BACKEND_URL}/api/conversions`, {
+      const response = await axios.get(`${BACKEND_URL}/api/folders`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setConversions(response.data);
+      setFolders(response.data);
     } catch (error) {
-      toast.error('Failed to fetch conversions');
+      toast.error('Failed to fetch folders');
+      console.error('Error fetching folders:', error);
+    }
+  };
+
+  const fetchFiles = async (folderId) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${BACKEND_URL}/api/folders/${folderId}/files`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFiles(response.data);
+    } catch (error) {
+      toast.error('Failed to fetch files');
+      console.error('Error fetching files:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateFolder = async (name, parentFolderId = null) => {
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('name', name);
+      if (parentFolderId) {
+        formData.append('parent_folder_id', parentFolderId);
+      }
+      
+      await axios.post(`${BACKEND_URL}/api/folders`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      toast.success('Folder created successfully');
+      fetchFolders();
+    } catch (error) {
+      toast.error('Failed to create folder: ' + (error.response?.data?.detail || 'Unknown error'));
+      console.error('Error creating folder:', error);
+    }
+  };
+
+  const handleRenameFolder = async (folderId, newName) => {
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('name', newName);
+      
+      await axios.put(`${BACKEND_URL}/api/folders/${folderId}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      toast.success('Folder renamed successfully');
+      fetchFolders();
+    } catch (error) {
+      toast.error('Failed to rename folder: ' + (error.response?.data?.detail || 'Unknown error'));
+      console.error('Error renaming folder:', error);
+    }
+  };
+
+  const handleDeleteFolder = async (folderId) => {
+    if (!window.confirm('Are you sure you want to delete this folder?')) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${BACKEND_URL}/api/folders/${folderId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      toast.success('Folder deleted successfully');
+      fetchFolders();
+      
+      // If the deleted folder was selected, go back to root
+      if (selectedFolderId === folderId) {
+        setSelectedFolderId('root');
+      }
+    } catch (error) {
+      toast.error('Failed to delete folder: ' + (error.response?.data?.detail || 'Unknown error'));
+      console.error('Error deleting folder:', error);
+    }
+  };
+
+  const handleDeleteFile = async (fileId) => {
+    if (!window.confirm('Are you sure you want to delete this file? All associated conversions will also be deleted.')) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${BACKEND_URL}/api/files/${fileId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      toast.success('File deleted successfully');
+      fetchFiles(selectedFolderId);
+      
+      if (selectedFileId === fileId) {
+        setSelectedFileId(null);
+      }
+    } catch (error) {
+      toast.error('Failed to delete file: ' + (error.response?.data?.detail || 'Unknown error'));
+      console.error('Error deleting file:', error);
+    }
+  };
+
+  const handleMoveFile = (fileId) => {
+    setFileToMove(fileId);
+    setShowMoveFileModal(true);
+  };
+
+  const handleMoveFileSubmit = async (fileId, targetFolderId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('file_id', fileId);
+      formData.append('target_folder_id', targetFolderId);
+      
+      await axios.post(`${BACKEND_URL}/api/files/move`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      toast.success('File moved successfully');
+      fetchFiles(selectedFolderId);
+    } catch (error) {
+      toast.error('Failed to move file: ' + (error.response?.data?.detail || 'Unknown error'));
+      console.error('Error moving file:', error);
     }
   };
 
@@ -376,6 +523,23 @@ function Dashboard() {
     }
   };
 
+  const handleSelectFile = (fileId) => {
+    setSelectedFileId(fileId === selectedFileId ? null : fileId);
+  };
+
+  const handleFilesProcessed = (results) => {
+    // Refresh files list after processing
+    fetchFiles(selectedFolderId);
+    setShowBulkUploader(false);
+  };
+
+  const handleSingleFileUpload = () => {
+    navigate('/convert', { state: { folderId: selectedFolderId } });
+  };
+
+  // Find the selected file
+  const selectedFile = files.find(file => file.id === selectedFileId);
+
   return (
     <div className="min-h-screen bg-gray-100">
       <nav className="bg-white shadow">
@@ -402,74 +566,198 @@ function Dashboard() {
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-semibold text-gray-800">Your Dashboard</h2>
-            <button
-              onClick={() => navigate('/convert')}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded"
-            >
-              New Conversion
-            </button>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Conversion History</h3>
-              
-              {loading ? (
-                <div className="flex justify-center py-4">
-                  <div className="loader"></div>
-                </div>
-              ) : conversions.length === 0 ? (
-                <div className="text-center py-4 text-gray-500">
-                  No conversions yet. Start by creating a new conversion.
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Original Filename
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Formatted Filename
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Date
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {conversions.map((conversion) => (
-                        <tr key={conversion.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {conversion.original_filename}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {conversion.formatted_filename}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(conversion.created_at).toLocaleString()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button
-                              onClick={() => handleDownload(conversion.id)}
-                              className="text-indigo-600 hover:text-indigo-900"
-                            >
-                              Download
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+            <h2 className="text-2xl font-semibold text-gray-800">Your Files</h2>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setShowCreateFolderModal(true)}
+                className="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-300 rounded shadow-sm"
+              >
+                <span className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
+                    <path d="M10 9a1 1 0 011 1v2h2a1 1 0 110 2h-2v2a1 1 0 11-2 0v-2H7a1 1 0 110-2h2v-2a1 1 0 011-1z" />
+                  </svg>
+                  New Folder
+                </span>
+              </button>
+              <button
+                onClick={handleSingleFileUpload}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded shadow-sm"
+              >
+                <span className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                  Upload File
+                </span>
+              </button>
+              <button
+                onClick={() => setShowBulkUploader(!showBulkUploader)}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded shadow-sm"
+              >
+                <span className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13H5.5z" />
+                    <path d="M9 13h2v5a1 1 0 11-2 0v-5z" />
+                  </svg>
+                  Bulk Upload
+                </span>
+              </button>
             </div>
           </div>
+
+          {showBulkUploader && (
+            <div className="mb-6">
+              <BulkUploader onFilesProcessed={handleFilesProcessed} folderId={selectedFolderId} />
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Folder navigation panel */}
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="p-4 border-b border-gray-200">
+                <h3 className="text-lg font-medium">Folders</h3>
+              </div>
+              <div className="p-4 space-y-2">
+                <div 
+                  className={`flex items-center p-2 rounded-md cursor-pointer ${selectedFolderId === 'root' ? 'bg-indigo-100' : 'hover:bg-gray-100'}`}
+                  onClick={() => setSelectedFolderId('root')}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                  </svg>
+                  <span className="flex-1 text-sm">Root</span>
+                </div>
+                
+                {folders.map(folder => (
+                  <Folder 
+                    key={folder.id}
+                    folder={folder}
+                    selected={selectedFolderId === folder.id}
+                    onSelect={setSelectedFolderId}
+                    onRename={handleRenameFolder}
+                    onDelete={handleDeleteFolder}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            {/* Files panel */}
+            <div className="lg:col-span-3 bg-white rounded-lg shadow overflow-hidden">
+              <div className="p-4 border-b border-gray-200">
+                <h3 className="text-lg font-medium">
+                  Files in {selectedFolderId === 'root' ? 'Root' : folders.find(f => f.id === selectedFolderId)?.name || ''}
+                </h3>
+              </div>
+              <div className="p-4">
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="loader"></div>
+                  </div>
+                ) : files.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No files in this folder. Upload some files to get started.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {files.map(file => (
+                      <FileItem 
+                        key={file.id}
+                        file={file}
+                        selected={selectedFileId === file.id}
+                        onSelect={handleSelectFile}
+                        onDelete={handleDeleteFile}
+                        onMove={handleMoveFile}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Selected file details */}
+          {selectedFile && (
+            <div className="mt-6 bg-white rounded-lg shadow overflow-hidden">
+              <div className="p-4 border-b border-gray-200">
+                <h3 className="text-lg font-medium">File Details: {selectedFile.original_filename}</h3>
+              </div>
+              <div className="p-4">
+                {selectedFile.conversions && selectedFile.conversions.length > 0 ? (
+                  <div>
+                    <h4 className="text-md font-medium mb-2">Conversions</h4>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Formatted Filename
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Date
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {selectedFile.conversions.map((conversion) => (
+                            <tr key={conversion.id}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {conversion.formatted_filename}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {new Date(conversion.created_at).toLocaleString()}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button
+                                  onClick={() => handleDownload(conversion.id)}
+                                  className="text-indigo-600 hover:text-indigo-900"
+                                >
+                                  Download
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    No conversions yet. Convert this file to Xero format to see it here.
+                  </div>
+                )}
+                
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={() => navigate('/convert', { state: { fileId: selectedFile.id } })}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded"
+                  >
+                    Convert to Xero Format
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Modals */}
+          <CreateFolderModal
+            isOpen={showCreateFolderModal}
+            onClose={() => setShowCreateFolderModal(false)}
+            onCreateFolder={handleCreateFolder}
+            parentFolderId={selectedFolderId !== 'root' ? selectedFolderId : null}
+          />
+          
+          <MoveFileModal
+            isOpen={showMoveFileModal}
+            onClose={() => setShowMoveFileModal(false)}
+            onMoveFile={handleMoveFileSubmit}
+            fileId={fileToMove}
+            folders={folders}
+            currentFolderId={selectedFolderId}
+          />
         </div>
       </div>
     </div>

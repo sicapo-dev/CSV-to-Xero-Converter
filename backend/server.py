@@ -422,8 +422,18 @@ def apply_xero_format(df, column_mapping):
 
 # Routes for file conversion
 @app.post("/api/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(
+    file: UploadFile = File(...),
+    folder_id: Optional[str] = Form(None),
+    current_user: User = Depends(get_current_user)
+):
     try:
+        # Check folder if provided
+        if folder_id and folder_id != "root":
+            folder = db.folders.find_one({"id": folder_id, "user_id": current_user.id})
+            if not folder:
+                raise HTTPException(status_code=404, detail="Folder not found")
+        
         # Check file extension
         filename = file.filename.lower()
         if not (filename.endswith('.csv') or filename.endswith('.xlsx')):
@@ -431,6 +441,7 @@ async def upload_file(file: UploadFile = File(...)):
         
         # Read file content
         file_content = await file.read()
+        file_size = len(file_content)
         file_type = "csv" if filename.endswith('.csv') else "xlsx"
         
         # Parse file
@@ -460,18 +471,38 @@ async def upload_file(file: UploadFile = File(...)):
                         record[k] = None
             return records
         
+        # Generate a unique file ID
+        file_id = str(uuid.uuid4())
+        
+        # Store file metadata in database
+        file_record = {
+            "id": file_id,
+            "user_id": current_user.id,
+            "folder_id": folder_id if folder_id else None,
+            "original_filename": filename,
+            "file_type": file_type,
+            "size_bytes": file_size,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        
+        db.files.insert_one(file_record)
+        
         # Prepare response
         response = {
+            "file_id": file_id,
+            "original_filename": filename,
+            "file_type": file_type,
+            "size_bytes": file_size,
+            "folder_id": folder_id,
+            "created_at": file_record["created_at"].isoformat(),
             "original_data": safe_json_serialize(df.head(50)),
             "formatted_data": safe_json_serialize(xero_df.head(50)),
             "original_columns": original_columns,
-            "column_mapping": column_mapping,
-            "file_id": str(uuid.uuid4()),
-            "file_type": file_type,
+            "column_mapping": column_mapping
         }
         
-        # Store the dataframes in a temporary storage (could use Redis in production)
-        # For simplicity, we'll use a file on disk
+        # Store the dataframe for later use
         # Clean the dataframe before storing
         clean_df = df.replace([np.inf, -np.inf], None)
         records = clean_df.to_dict(orient="records")
@@ -480,7 +511,7 @@ async def upload_file(file: UploadFile = File(...)):
                 if isinstance(v, float) and np.isnan(v):
                     record[k] = None
         
-        with open(f"/tmp/{response['file_id']}_original.json", "w") as f:
+        with open(f"/tmp/{file_id}_original.json", "w") as f:
             json.dump(records, f)
         
         return response

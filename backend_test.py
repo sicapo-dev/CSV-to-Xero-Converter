@@ -691,6 +691,21 @@ def run_all_tests():
             # If conversion worked, test download
             if conversion_id:
                 test_download_endpoint()
+        
+        # Test new functionality requested in review
+        print("\n=== Testing Specific Review Request Features ===")
+        
+        # Test amount prefix logic with reference columns
+        test_amount_prefix_logic()
+        
+        # Test folder management
+        test_folder_management()
+        
+        # Test bulk upload
+        test_bulk_upload()
+        
+        # Test preview functionality
+        test_preview_functionality()
     
     # Check database
     check_database()

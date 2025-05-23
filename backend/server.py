@@ -201,11 +201,18 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
 # File parsing helper functions
 def parse_file_content(file_content, file_type):
     if file_type == "csv":
-        return pd.read_csv(io.StringIO(file_content.decode('utf-8')))
+        # Parse CSV with pandas
+        df = pd.read_csv(io.StringIO(file_content.decode('utf-8')))
     elif file_type == "xlsx":
-        return pd.read_excel(io.BytesIO(file_content))
+        # Parse XLSX with pandas
+        df = pd.read_excel(io.BytesIO(file_content))
     else:
         raise HTTPException(status_code=400, detail="Unsupported file type")
+    
+    # Replace NaN, Infinity, and -Infinity with None to avoid JSON serialization issues
+    df = df.replace([float('inf'), -float('inf'), float('nan')], None)
+    
+    return df
 
 def format_date(date_str):
     try:

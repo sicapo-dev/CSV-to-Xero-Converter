@@ -176,11 +176,11 @@ backend:
 
   - task: "Implement file conversion history"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "medium"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
@@ -194,6 +194,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "File conversion history functionality is now working correctly. Successfully converted a file, retrieved the conversion history, and accessed the download endpoint."
+      - working: false
+        agent: "testing"
+        comment: "Download endpoint has JSON parsing issues. The endpoint returns data but there are JSON serialization problems that prevent proper file downloads. This affects the conversion history functionality."
 
 frontend:
   - task: "Create file upload interface"

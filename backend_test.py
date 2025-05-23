@@ -25,13 +25,18 @@ test_results = {
     "upload_endpoint": False,
     "convert_endpoint": False,
     "conversions_endpoint": False,
-    "download_endpoint": False
+    "download_endpoint": False,
+    "amount_prefix_logic": False,
+    "folder_management": False,
+    "bulk_upload": False,
+    "preview_functionality": False
 }
 
 # Store tokens and IDs for use across tests
 auth_token = None
 file_id = None
 conversion_id = None
+folder_id = None
 
 def create_test_csv():
     """Create a sample CSV file for testing"""

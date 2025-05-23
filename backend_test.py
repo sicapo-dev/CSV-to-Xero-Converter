@@ -141,7 +141,8 @@ def test_amount_prefix_logic():
             "B": "Reference", 
             "C": "Description",
             "D": "Amount",
-            "E": "Amount"  # Reference will be derived from amount
+            "E": "Amount",  # Reference will be derived from amount
+            "transaction_type": "Reference"  # Use Reference column for transaction type detection
         }
         
         data = {

@@ -799,8 +799,12 @@ async def get_folders(current_user: User = Depends(get_current_user)):
         # Get all folders for the current user
         folders = list(db.folders.find({"user_id": current_user.id}).sort("name", 1))
         
-        # Parse the MongoDB BSON to JSON
-        return json.loads(dumps(folders))
+        # Convert ObjectId to string for each folder
+        for folder in folders:
+            if "_id" in folder:
+                folder["_id"] = str(folder["_id"])
+        
+        return folders
     
     except Exception as e:
         print(f"Error in get_folders: {str(e)}")

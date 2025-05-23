@@ -412,6 +412,50 @@ async def upload_file(file: UploadFile = File(...)):
         print(f"Error in upload_file: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/preview")
+async def preview_conversion(
+    file_id: str = Form(...),
+    column_mappings: str = Form(...),
+    preview_only: str = Form("false"),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        # Load the original data
+        with open(f"/tmp/{file_id}_original.json", "r") as f:
+            records = json.load(f)
+            df = pd.DataFrame.from_records(records)
+        
+        # Parse column mappings
+        column_mapping = json.loads(column_mappings)
+        
+        # Apply Xero format using the provided mapping
+        xero_df = apply_xero_format(df, column_mapping)
+        
+        # Handle problematic values for JSON serialization
+        def safe_json_serialize(df):
+            # Replace problematic values
+            df_cleaned = df.copy()
+            # Replace inf/-inf with None
+            df_cleaned = df_cleaned.replace([np.inf, -np.inf], None)
+            # Convert to records
+            records = df_cleaned.to_dict(orient="records")
+            # Convert all NaN to None for JSON serialization
+            for record in records:
+                for k, v in record.items():
+                    if isinstance(v, float) and np.isnan(v):
+                        record[k] = None
+            return records
+        
+        # Return the formatted data for preview
+        return {
+            "formatted_data": safe_json_serialize(xero_df),
+            "column_mapping": column_mapping
+        }
+    
+    except Exception as e:
+        print(f"Error in preview_conversion: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/convert")
 async def convert_file(
     file_id: str = Form(...),

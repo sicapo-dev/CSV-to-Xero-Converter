@@ -303,15 +303,16 @@ function Dashboard() {
   const handleDownload = async (conversionId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${BACKEND_URL}/api/download/${conversionId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
       
-      // In a real app, this would trigger a file download
-      // For this MVP, we'll just show a success message
-      toast.success('Download link generated: ' + response.data.file_path);
+      // Create a direct download link to the file
+      const downloadUrl = `${BACKEND_URL}/api/download/${conversionId}`;
+      
+      // Open the download URL in a new tab/window
+      window.open(downloadUrl, '_blank');
+      
+      toast.success('Download started!');
     } catch (error) {
-      toast.error('Failed to generate download link');
+      toast.error('Failed to download file: ' + (error.response?.data?.detail || 'Unknown error'));
     }
   };
 

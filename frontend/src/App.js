@@ -9,6 +9,22 @@ import './App.css';
 // Get backend URL from environment
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
+// Logo Component
+function Logo({ className = "" }) {
+  return (
+    <div className={`flex flex-col items-center ${className}`}>
+      <div className="text-4xl font-bold">CSV</div>
+      <div className="my-2">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M19 13L12 20L5 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M12 4V20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </div>
+      <div className="text-4xl font-bold">Xero</div>
+    </div>
+  );
+}
+
 // Authentication Context
 const AuthContext = createContext();
 

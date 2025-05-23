@@ -520,6 +520,92 @@ async def upload_file(
         print(f"Error in upload_file: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/bulk-upload")
+async def bulk_upload(
+    files: List[UploadFile] = File(...),
+    folder_id: Optional[str] = Form(None),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        # Check folder if provided
+        if folder_id and folder_id != "root":
+            folder = db.folders.find_one({"id": folder_id, "user_id": current_user.id})
+            if not folder:
+                raise HTTPException(status_code=404, detail="Folder not found")
+        
+        results = []
+        
+        for file in files:
+            # Check file extension
+            filename = file.filename.lower()
+            if not (filename.endswith('.csv') or filename.endswith('.xlsx')):
+                # Skip unsupported files but continue with others
+                results.append({
+                    "filename": filename,
+                    "success": False,
+                    "error": "Unsupported file type. Only CSV and XLSX files are supported."
+                })
+                continue
+            
+            try:
+                # Read file content
+                file_content = await file.read()
+                file_size = len(file_content)
+                file_type = "csv" if filename.endswith('.csv') else "xlsx"
+                
+                # Parse file
+                df = parse_file_content(file_content, file_type)
+                
+                # Auto-map columns
+                column_mapping = auto_map_columns(df)
+                
+                # Generate a unique file ID
+                file_id = str(uuid.uuid4())
+                
+                # Store file metadata in database
+                file_record = {
+                    "id": file_id,
+                    "user_id": current_user.id,
+                    "folder_id": folder_id if folder_id else None,
+                    "original_filename": filename,
+                    "file_type": file_type,
+                    "size_bytes": file_size,
+                    "created_at": datetime.utcnow(),
+                    "updated_at": datetime.utcnow()
+                }
+                
+                db.files.insert_one(file_record)
+                
+                # Store the dataframe for later use
+                clean_df = df.replace([np.inf, -np.inf], None)
+                records = clean_df.to_dict(orient="records")
+                for record in records:
+                    for k, v in record.items():
+                        if isinstance(v, float) and np.isnan(v):
+                            record[k] = None
+                
+                with open(f"/tmp/{file_id}_original.json", "w") as f:
+                    json.dump(records, f)
+                
+                results.append({
+                    "file_id": file_id,
+                    "filename": filename,
+                    "success": True
+                })
+            
+            except Exception as e:
+                results.append({
+                    "filename": filename,
+                    "success": False,
+                    "error": str(e)
+                })
+        
+        return {"results": results}
+    
+    except Exception as e:
+        print(f"Error in bulk_upload: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/preview")
 async def preview_conversion(
     file_id: str = Form(...),

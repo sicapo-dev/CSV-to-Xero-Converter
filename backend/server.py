@@ -573,6 +573,11 @@ async def convert_file(
     current_user: User = Depends(get_current_user)
 ):
     try:
+        # Check if file exists and belongs to the user
+        file_record = db.files.find_one({"id": file_id, "user_id": current_user.id})
+        if not file_record:
+            raise HTTPException(status_code=404, detail="File not found")
+        
         # Load the original data
         with open(f"/tmp/{file_id}_original.json", "r") as f:
             records = json.load(f)
@@ -585,22 +590,24 @@ async def convert_file(
         xero_df = apply_xero_format(df, column_mapping)
         
         # Generate output filename
-        original_filename = f"{file_id}_original.json".split('_original.json')[0]
         if not formatted_filename:
-            formatted_filename = f"{original_filename}_formatted.csv"
+            original_filename = file_record["original_filename"]
+            formatted_filename = f"{original_filename.split('.')[0]}_formatted.csv"
         elif not formatted_filename.endswith('.csv'):
             formatted_filename += '.csv'
         
         # Save the formatted file
-        output_path = f"/tmp/{formatted_filename}"
+        output_path = f"/tmp/{file_id}_{formatted_filename}"
         xero_df.to_csv(output_path, index=False)
         
         # Store conversion record in database
         conversion = {
             "id": str(uuid.uuid4()),
             "user_id": current_user.id,
-            "original_filename": original_filename,
+            "file_id": file_id,
+            "original_filename": file_record["original_filename"],
             "formatted_filename": formatted_filename,
+            "column_mapping": column_mapping,
             "created_at": datetime.utcnow()
         }
         db.conversions.insert_one(conversion)
@@ -622,9 +629,10 @@ async def convert_file(
         
         # Return the formatted data and download link
         return {
-            "formatted_data": safe_json_serialize(xero_df),
+            "conversion_id": conversion["id"],
+            "file_id": file_id,
             "formatted_filename": formatted_filename,
-            "conversion_id": conversion["id"]
+            "formatted_data": safe_json_serialize(xero_df)
         }
     
     except Exception as e:

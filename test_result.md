@@ -311,4 +311,6 @@ agent_communication:
   - agent: "main"
     message: "The user has requested automated frontend testing along with manual testing. Proceeding with frontend testing to verify all components work correctly."
   - agent: "testing"
-    message: "Completed comprehensive testing of all frontend components. All features are working correctly: user registration, login, file upload, split-screen preview, column mapping, file conversion, conversion history dashboard, and logout functionality. The application provides a smooth user experience with appropriate feedback at each step. All frontend tasks have been marked as working in the test_result.md file."
+    message: "Completed frontend testing and found that all core features are working correctly. Users can register, log in, upload files, view the preview, adjust column mappings, convert files, and access their conversion history. The authentication system is functioning as expected with proper validation, and the file conversion process works smoothly. All frontend tasks have been marked as working in the test_result.md file."
+  - agent: "main"
+    message: "The user reported an issue with file uploads. Checking the backend logs revealed a JSON serialization error with NaN and Infinity values. Fixed the issue by properly handling these special float values in both the file upload and convert endpoints. Also added more detailed file format guidelines to the frontend to help users understand the expected file format."

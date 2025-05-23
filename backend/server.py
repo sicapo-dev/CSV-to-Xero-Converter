@@ -243,7 +243,25 @@ def format_amount(amount_str):
     except:
         return amount_str
 
-def add_reference_code(amount_str):
+def add_reference_code(amount_str, transaction_type=None):
+    """
+    Determine if a transaction is a debit or credit based on:
+    1. The transaction type column if provided (db/dr/debit = D, cr/credit = C)
+    2. The amount value (negative = D, positive = C) if transaction type not provided or not recognized
+    """
+    # First check if there's a transaction type provided
+    if transaction_type is not None and isinstance(transaction_type, str):
+        transaction_type = transaction_type.lower().strip()
+        
+        # Check for debit indicators
+        if transaction_type in ['db', 'dr', 'debit', 'dbt', 'debited', 'd']:
+            return "D"
+        
+        # Check for credit indicators
+        if transaction_type in ['cr', 'credit', 'cdt', 'credited', 'c']:
+            return "C"
+    
+    # Fall back to amount-based detection if transaction type not recognized
     try:
         amount = float(str(amount_str).replace(',', ''))
         return "D" if amount < 0 else "C"

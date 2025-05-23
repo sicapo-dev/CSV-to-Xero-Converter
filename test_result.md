@@ -128,11 +128,11 @@ backend:
 
   - task: "Implement auto-mapping to Xero format"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
@@ -149,6 +149,9 @@ backend:
       - working: false
         agent: "testing"
         comment: "CRITICAL ISSUE: Amount prefix logic is not working correctly. When Reference column contains 'C', 'CR', or 'Credit', amounts should be prefixed with '-' but they remain positive. The format_amount function is correctly implemented but not being called with the Reference column values. In line 411 of server.py, format_amount is called with has_transaction_type (boolean) instead of the actual reference value. This breaks the core conversion functionality that users specifically requested."
+      - working: true
+        agent: "testing"
+        comment: "✅ FIXED: Amount prefix logic now working correctly. Credits (C/CR/Credit) are properly formatted as negative amounts, Debits (D/DB/Debit) remain positive. Tested with mixed case references and all scenarios pass. The format_amount function logic was corrected to properly handle reference-based formatting."
 
   - task: "Implement user authentication"
     implemented: true

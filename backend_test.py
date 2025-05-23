@@ -9,7 +9,7 @@ import csv
 from io import StringIO
 
 # Get the backend URL from the frontend .env file
-BACKEND_URL = "https://89eb93da-7c1d-4fcb-ad8d-7447826c2292.preview.emergentagent.com"
+BACKEND_URL = "https://073c2ac2-806b-4513-b576-7f4117f1530b.preview.emergentagent.com"
 API_URL = f"{BACKEND_URL}/api"
 
 # Test user credentials

@@ -128,11 +128,11 @@ backend:
 
   - task: "Implement auto-mapping to Xero format"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
@@ -146,6 +146,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "Auto-mapping functionality is now working correctly. The system successfully identified and mapped columns from the test CSV file to the Xero format."
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL ISSUE: Amount prefix logic is not working correctly. When Reference column contains 'C', 'CR', or 'Credit', amounts should be prefixed with '-' but they remain positive. The format_amount function is correctly implemented but not being called with the Reference column values. In line 411 of server.py, format_amount is called with has_transaction_type (boolean) instead of the actual reference value. This breaks the core conversion functionality that users specifically requested."
 
   - task: "Implement user authentication"
     implemented: true

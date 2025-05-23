@@ -903,6 +903,343 @@ function Register() {
   );
 }
 
+// Folder Component
+function Folder({ folder, onSelect, onRename, onDelete, selected }) {
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [newName, setNewName] = useState(folder.name);
+  
+  const handleRename = (e) => {
+    e.stopPropagation();
+    if (isRenaming) {
+      onRename(folder.id, newName);
+      setIsRenaming(false);
+    } else {
+      setIsRenaming(true);
+    }
+  };
+  
+  const handleDelete = (e) => {
+    e.stopPropagation();
+    onDelete(folder.id);
+  };
+  
+  return (
+    <div 
+      className={`flex items-center p-2 rounded-md cursor-pointer ${selected ? 'bg-indigo-100' : 'hover:bg-gray-100'}`}
+      onClick={() => onSelect(folder.id)}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+        <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1H8a3 3 0 00-3 3v1.5a1.5 1.5 0 01-3 0V6z" clipRule="evenodd" />
+        <path d="M6 12a2 2 0 012-2h8a2 2 0 012 2v2a2 2 0 01-2 2H8a2 2 0 01-2-2v-2z" />
+      </svg>
+      
+      {isRenaming ? (
+        <input
+          type="text"
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              onRename(folder.id, newName);
+              setIsRenaming(false);
+            } else if (e.key === 'Escape') {
+              setNewName(folder.name);
+              setIsRenaming(false);
+            }
+          }}
+          onClick={(e) => e.stopPropagation()}
+          autoFocus
+          className="border rounded px-2 py-1 text-sm flex-1 mr-2"
+        />
+      ) : (
+        <span className="flex-1 text-sm">{folder.name}</span>
+      )}
+      
+      <div className="flex space-x-1">
+        <button
+          onClick={handleRename}
+          className="text-gray-500 hover:text-indigo-700 p-1 rounded"
+          title={isRenaming ? "Save" : "Rename"}
+        >
+          {isRenaming ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+            </svg>
+          )}
+        </button>
+        <button
+          onClick={handleDelete}
+          className="text-gray-500 hover:text-red-700 p-1 rounded"
+          title="Delete"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// File Item Component
+function FileItem({ file, onSelect, onDelete, onMove, selected }) {
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return bytes + ' B';
+    else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    else return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+  
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString();
+  };
+  
+  return (
+    <div 
+      className={`flex items-center p-2 rounded-md cursor-pointer ${selected ? 'bg-indigo-100' : 'hover:bg-gray-100'}`}
+      onClick={() => onSelect(file.id)}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+      </svg>
+      
+      <div className="flex-1">
+        <div className="text-sm font-medium">{file.original_filename}</div>
+        <div className="text-xs text-gray-500">
+          {formatFileSize(file.size_bytes)} • Uploaded: {formatDate(file.created_at)}
+        </div>
+      </div>
+      
+      <div className="flex space-x-1">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onMove(file.id);
+          }}
+          className="text-gray-500 hover:text-indigo-700 p-1 rounded"
+          title="Move"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+          </svg>
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(file.id);
+          }}
+          className="text-gray-500 hover:text-red-700 p-1 rounded"
+          title="Delete"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Create Folder Modal
+function CreateFolderModal({ isOpen, onClose, onCreateFolder, parentFolderId }) {
+  const [folderName, setFolderName] = useState('');
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (folderName.trim()) {
+      onCreateFolder(folderName, parentFolderId);
+      setFolderName('');
+      onClose();
+    }
+  };
+  
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <h3 className="text-lg font-medium mb-4">Create New Folder</h3>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label htmlFor="folder-name" className="block text-sm font-medium text-gray-700 mb-1">
+              Folder Name
+            </label>
+            <input
+              type="text"
+              id="folder-name"
+              value={folderName}
+              onChange={(e) => setFolderName(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded"
+              autoFocus
+            />
+          </div>
+          <div className="flex justify-end space-x-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 border border-transparent rounded shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+            >
+              Create
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Move File Modal
+function MoveFileModal({ isOpen, onClose, onMoveFile, fileId, folders, currentFolderId }) {
+  const [selectedFolderId, setSelectedFolderId] = useState(currentFolderId || 'root');
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onMoveFile(fileId, selectedFolderId);
+    onClose();
+  };
+  
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <h3 className="text-lg font-medium mb-4">Move File</h3>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label htmlFor="target-folder" className="block text-sm font-medium text-gray-700 mb-1">
+              Select Destination Folder
+            </label>
+            <select
+              id="target-folder"
+              value={selectedFolderId}
+              onChange={(e) => setSelectedFolderId(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded"
+            >
+              <option value="root">Root Folder</option>
+              {folders.map((folder) => (
+                <option key={folder.id} value={folder.id}>
+                  {folder.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 border border-transparent rounded shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+            >
+              Move
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Bulk Upload Component
+function BulkUploader({ onFilesProcessed, folderId }) {
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+  
+  const { getRootProps, getInputProps } = useDropzone({
+    accept: {
+      'text/csv': ['.csv'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
+    },
+    multiple: true,
+    onDrop: async (acceptedFiles) => {
+      if (acceptedFiles.length === 0) return;
+      
+      setUploadError(null);
+      setIsUploading(true);
+      
+      try {
+        const formData = new FormData();
+        acceptedFiles.forEach(file => {
+          formData.append('files', file);
+        });
+        
+        if (folderId) {
+          formData.append('folder_id', folderId);
+        }
+        
+        const token = localStorage.getItem('token');
+        const response = await axios.post(`${BACKEND_URL}/api/bulk-upload`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        onFilesProcessed(response.data.results);
+        
+        // Count successful uploads
+        const successCount = response.data.results.filter(r => r.success).length;
+        toast.success(`${successCount} of ${acceptedFiles.length} files uploaded successfully!`);
+      } catch (error) {
+        const errorMessage = error.response?.data?.detail || 'Unknown error occurred';
+        setUploadError(errorMessage);
+        toast.error('Upload failed: ' + errorMessage);
+        console.error('File upload error:', error);
+      } finally {
+        setIsUploading(false);
+      }
+    }
+  });
+
+  return (
+    <div className="mt-4">
+      <div {...getRootProps({ className: 'dropzone' })}>
+        <input {...getInputProps()} />
+        <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 transition duration-200">
+          {isUploading ? (
+            <div className="flex flex-col items-center">
+              <div className="loader mb-4"></div>
+              <p>Uploading and processing files...</p>
+            </div>
+          ) : (
+            <>
+              <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <p className="mt-4 text-sm text-gray-600">
+                <span className="font-medium text-indigo-600 hover:text-indigo-500">
+                  Drag and drop multiple CSV or XLSX files here, or click to browse
+                </span>
+              </p>
+              <p className="mt-1 text-xs text-gray-500">Upload up to 20 files at once (10MB max per file)</p>
+              {uploadError && (
+                <div className="mt-2 text-sm text-red-600 bg-red-50 p-2 rounded">
+                  <p className="font-semibold">Error uploading files:</p>
+                  <p>{uploadError}</p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Main App
 function App() {
   return (

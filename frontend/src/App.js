@@ -235,9 +235,9 @@ function ColumnMapper({ originalColumns, columnMapping, onMappingChange, onUpdat
         <button
           onClick={onUpdatePreview}
           className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={props.isUpdatingPreview}
+          disabled={isUpdatingPreview}
         >
-          {props.isUpdatingPreview ? (
+          {isUpdatingPreview ? (
             <span className="flex items-center">
               <div className="loader-sm mr-2"></div>
               Updating...

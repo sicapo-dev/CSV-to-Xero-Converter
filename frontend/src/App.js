@@ -481,6 +481,32 @@ function FileConversion() {
       setFormattedData(response.data.formatted_data);
       toast.success('File converted successfully!');
       
+      // Download the converted file
+      try {
+        const downloadResponse = await axios.get(`${BACKEND_URL}/api/download/${response.data.conversion_id}`, {
+          responseType: 'blob',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // Create a URL for the blob
+        const url = window.URL.createObjectURL(new Blob([downloadResponse.data]));
+        
+        // Create a temporary link element
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', formattedFilename || 'xero_formatted.csv');
+        
+        // Append the link to the body, click it, and remove it
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast.success('Download started!');
+      } catch (downloadError) {
+        toast.error('Download failed, but conversion was successful. You can download from the dashboard.');
+        console.error('Download error:', downloadError);
+      }
+      
       // Navigate to dashboard after successful conversion
       setTimeout(() => {
         navigate('/');

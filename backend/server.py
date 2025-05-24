@@ -257,8 +257,8 @@ def format_date(date_str):
 def format_amount(amount_str, reference_str=None):
     """
     Format amount for Xero based on reference value:
-    - If reference contains "C", "CR", or "Credit" -> Add minus prefix (Credit = negative in Xero)
-    - If reference contains "D", "DB", or "Debit" -> Leave as positive (Debit = positive in Xero)
+    - If reference contains "C", "CR", or "Credit" -> Keep amount POSITIVE (no prefix)
+    - If reference contains "D", "DB", or "Debit" -> Add NEGATIVE prefix (-)
     - If no reference provided, keep original behavior
     """
     # Convert to string if not already
@@ -275,17 +275,17 @@ def format_amount(amount_str, reference_str=None):
         if reference_str is not None and isinstance(reference_str, str):
             reference_lower = reference_str.lower()
             
-            # Reference indicates Credit -> add minus prefix (Credit = negative in Xero)
+            # Reference indicates Credit -> keep as POSITIVE (remove any minus)
             if any(term in reference_lower for term in ['c', 'cr', 'credit']):
-                if amount > 0:  # Only add minus if positive
-                    return f"-{cleaned_amount}"
-                return cleaned_amount  # Already negative
-            
-            # Reference indicates Debit -> leave as positive (Debit = positive in Xero)
-            elif any(term in reference_lower for term in ['d', 'db', 'debit']):
                 if amount < 0:  # Remove minus if negative
                     return cleaned_amount.replace('-', '')
-                return cleaned_amount  # Already positive
+                return cleaned_amount
+            
+            # Reference indicates Debit -> make NEGATIVE (add minus prefix)
+            elif any(term in reference_lower for term in ['d', 'db', 'debit']):
+                if amount > 0:  # Only add minus if positive
+                    return f"-{cleaned_amount}"
+                return cleaned_amount
         
         # Default behavior (no reference or unrecognized reference)
         # Keep as is
